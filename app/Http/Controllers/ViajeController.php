@@ -13,7 +13,8 @@ class ViajeController extends Controller
         $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
 
-        $viajes = Viaje::whereBetween('fecha', [$desde, $hasta])
+        $viajes = Viaje::whereDate('fecha', '>=', $desde)
+            ->whereDate('fecha', '<=', $hasta)
             ->orderByDesc('fecha')
             ->orderByDesc('id')
             ->get();

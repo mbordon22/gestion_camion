@@ -15,7 +15,7 @@ class ReporteController extends Controller
         $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
 
-        $viajes = Viaje::whereBetween('fecha', [$desde, $hasta])->orderByDesc('fecha')->get();
+        $viajes = Viaje::whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)->orderByDesc('fecha')->get();
         $combustible = Combustible::whereBetween('fecha', [$desde, $hasta])->get();
         $mantenimiento = Mantenimiento::whereBetween('fecha', [$desde, $hasta])->get();
 
