@@ -10,7 +10,7 @@ class Viaje extends Model
 
     protected $fillable = [
         'fecha', 'fecha_carga', 'nro_ingreso', 'tipo_ingreso', 'motivo',
-        'bolsas', 'precio_bolsa', 'total', 'kg_netos', 'destino',
+        'bolsas', 'precio_bolsa', 'total', 'facturado', 'kg_netos', 'destino',
         'observaciones', 'created_at',
     ];
 
@@ -20,6 +20,7 @@ class Viaje extends Model
         'bolsas' => 'integer',
         'precio_bolsa' => 'decimal:2',
         'total' => 'decimal:2',
+        'facturado' => 'boolean',
         'kg_netos' => 'decimal:2',
         'created_at' => 'datetime',
     ];

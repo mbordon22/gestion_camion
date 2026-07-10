@@ -52,10 +52,28 @@
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p class="text-xs text-blue-600 font-medium uppercase tracking-wide">Viajes en período</p>
         <p class="text-3xl font-bold text-blue-800 mt-1">{{ $cantidadViajes }}</p>
+        <div class="mt-2 flex flex-wrap gap-2 text-xs">
+            <span id="bd-cant-facturados" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+                {{ $cantidadFacturados }} facturados
+            </span>
+            <span id="bd-cant-no-facturados" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 font-medium">
+                {{ $cantidadNoFacturados }} sin facturar
+            </span>
+        </div>
     </div>
     <div class="bg-green-50 border border-green-200 rounded-lg p-4">
         <p class="text-xs text-green-600 font-medium uppercase tracking-wide">Total del período</p>
         <p class="text-2xl font-bold text-green-800 mt-1">$ {{ number_format($totalPeriodo, 2, ',', '.') }}</p>
+        <div class="mt-2 space-y-0.5 text-xs">
+            <p class="flex justify-between text-green-700">
+                <span>Facturado:</span>
+                <span id="bd-total-facturado" class="font-semibold">$ {{ number_format($totalFacturado, 2, ',', '.') }}</span>
+            </p>
+            <p class="flex justify-between text-gray-600">
+                <span>Sin facturar:</span>
+                <span id="bd-total-no-facturado" class="font-semibold">$ {{ number_format($totalNoFacturado, 2, ',', '.') }}</span>
+            </p>
+        </div>
     </div>
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center">
         <p class="text-sm text-gray-600">
@@ -85,6 +103,7 @@
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Bolsas</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Precio/bolsa</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-600">Facturado</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Kg Netos</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Destino</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Motivo</th>
@@ -105,6 +124,19 @@
                             <td class="px-4 py-3 text-right text-gray-700">{{ number_format($viaje->bolsas, 0, ',', '.') }}</td>
                             <td class="px-4 py-3 text-right text-gray-700">$ {{ number_format($viaje->precio_bolsa, 2, ',', '.') }}</td>
                             <td class="px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer toggle-facturado"
+                                           data-url="{{ route('viajes.facturado', $viaje) }}"
+                                           data-total="{{ $viaje->total }}"
+                                           {{ $viaje->facturado ? 'checked' : '' }}>
+                                    <span class="relative w-10 h-5 bg-gray-300 rounded-full transition-colors
+                                                 peer-checked:bg-green-500
+                                                 after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                                                 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
+                                                 peer-checked:after:translate-x-5"></span>
+                                </label>
+                            </td>
                             <td class="px-4 py-3 text-right text-gray-700">
                                 {{ $viaje->kg_netos ? number_format($viaje->kg_netos, 0, ',', '.') : '—' }}
                             </td>
@@ -134,11 +166,64 @@
                     <tr>
                         <td colspan="6" class="px-4 py-3 text-right text-gray-700">Total:</td>
                         <td class="px-4 py-3 text-right text-green-700 text-base">$ {{ number_format($totalPeriodo, 2, ',', '.') }}</td>
-                        <td colspan="4"></td>
+                        <td colspan="5"></td>
                     </tr>
                 </tfoot>
             </table>
         </div>
     @endif
 </div>
+
+<script>
+(function () {
+    const bd = {
+        cantF: {{ (int) $cantidadFacturados }},
+        cantN: {{ (int) $cantidadNoFacturados }},
+        totF: {{ (float) $totalFacturado }},
+        totN: {{ (float) $totalNoFacturado }},
+    };
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    const token = meta ? meta.getAttribute('content') : '';
+    const nf = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function render() {
+        document.getElementById('bd-cant-facturados').textContent = bd.cantF + ' facturados';
+        document.getElementById('bd-cant-no-facturados').textContent = bd.cantN + ' sin facturar';
+        document.getElementById('bd-total-facturado').textContent = '$ ' + nf.format(bd.totF);
+        document.getElementById('bd-total-no-facturado').textContent = '$ ' + nf.format(bd.totN);
+    }
+
+    document.querySelectorAll('.toggle-facturado').forEach(function (chk) {
+        chk.addEventListener('change', function () {
+            const prev = !chk.checked; // estado antes del clic
+            chk.disabled = true;
+
+            fetch(chk.dataset.url, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (data) {
+                chk.checked = data.facturado;
+                const total = (typeof data.total === 'number') ? data.total : (parseFloat(chk.dataset.total) || 0);
+                if (data.facturado) {
+                    bd.cantF++; bd.cantN--; bd.totF += total; bd.totN -= total;
+                } else {
+                    bd.cantF--; bd.cantN++; bd.totF -= total; bd.totN += total;
+                }
+                render();
+            })
+            .catch(function () {
+                chk.checked = prev; // revertir el switch
+                alert('No se pudo actualizar el estado de facturación. Probá de nuevo.');
+            })
+            .finally(function () { chk.disabled = false; });
+        });
+    });
+})();
+</script>
 @endsection

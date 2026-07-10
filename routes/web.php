@@ -18,6 +18,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', fn() => redirect()->route('viajes.index'))->name('dashboard');
 
     Route::resource('viajes', ViajeController::class)->except(['show']);
+    Route::patch('viajes/{viaje}/facturado', [ViajeController::class, 'toggleFacturado'])->name('viajes.facturado');
     Route::resource('combustible', CombustibleController::class)->except(['show']);
     Route::resource('mantenimiento', MantenimientoController::class)->except(['show']);
 

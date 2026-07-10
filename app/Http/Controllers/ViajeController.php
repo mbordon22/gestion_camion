@@ -10,7 +10,7 @@ class ViajeController extends Controller
 {
     public function index(Request $request)
     {
-        $periodo = $request->get('periodo', 'mes');
+        $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
 
         $viajes = Viaje::whereBetween('fecha', [$desde, $hasta])
@@ -21,7 +21,18 @@ class ViajeController extends Controller
         $totalPeriodo = $viajes->sum('total');
         $cantidadViajes = $viajes->count();
 
-        return view('viajes.index', compact('viajes', 'totalPeriodo', 'cantidadViajes', 'periodo', 'desde', 'hasta'));
+        $facturados    = $viajes->where('facturado', true);
+        $noFacturados  = $viajes->where('facturado', false);
+
+        $totalFacturado      = $facturados->sum('total');
+        $totalNoFacturado    = $noFacturados->sum('total');
+        $cantidadFacturados  = $facturados->count();
+        $cantidadNoFacturados = $noFacturados->count();
+
+        return view('viajes.index', compact(
+            'viajes', 'totalPeriodo', 'cantidadViajes', 'periodo', 'desde', 'hasta',
+            'totalFacturado', 'totalNoFacturado', 'cantidadFacturados', 'cantidadNoFacturados'
+        ));
     }
 
     public function create()
@@ -40,10 +51,13 @@ class ViajeController extends Controller
             'bolsas'       => 'required|integer|min:1',
             'precio_bolsa' => 'required|numeric|min:0',
             'total'        => 'required|numeric|min:0',
+            'facturado'    => 'boolean',
             'kg_netos'     => 'nullable|numeric|min:0',
             'destino'      => 'nullable|string|max:100',
             'observaciones'=> 'nullable|string|max:500',
         ]);
+
+        $validated['facturado'] = $request->boolean('facturado');
 
         Viaje::create($validated);
 
@@ -66,10 +80,13 @@ class ViajeController extends Controller
             'bolsas'       => 'required|integer|min:1',
             'precio_bolsa' => 'required|numeric|min:0',
             'total'        => 'required|numeric|min:0',
+            'facturado'    => 'boolean',
             'kg_netos'     => 'nullable|numeric|min:0',
             'destino'      => 'nullable|string|max:100',
             'observaciones'=> 'nullable|string|max:500',
         ]);
+
+        $validated['facturado'] = $request->boolean('facturado');
 
         $viaje->update($validated);
 
@@ -80,6 +97,20 @@ class ViajeController extends Controller
     {
         $viaje->delete();
         return redirect()->route('viajes.index')->with('success', 'Viaje eliminado.');
+    }
+
+    public function toggleFacturado(Request $request, Viaje $viaje)
+    {
+        $viaje->update(['facturado' => ! $viaje->facturado]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'facturado' => $viaje->facturado,
+                'total'     => (float) $viaje->total,
+            ]);
+        }
+
+        return back()->with('success', 'Estado de facturación actualizado.');
     }
 
     private function rangoFechas(string $periodo, Request $request): array
@@ -93,7 +124,7 @@ class ViajeController extends Controller
                 ? [$hoy->startOfMonth()->toDateString(), $hoy->copy()->startOfMonth()->addDays(14)->toDateString()]
                 : [$hoy->copy()->startOfMonth()->addDays(15)->toDateString(), $hoy->copy()->endOfMonth()->toDateString()],
             'rango'    => [
-                $request->get('desde', $hoy->startOfMonth()->toDateString()),
+                $request->get('desde', $hoy->copy()->subDays(60)->toDateString()),
                 $request->get('hasta', $hoy->toDateString()),
             ],
             default    => [$hoy->startOfMonth()->toDateString(), $hoy->copy()->endOfMonth()->toDateString()],

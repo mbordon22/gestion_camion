@@ -75,6 +75,21 @@
         @error('total') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
 
+    <div class="sm:col-span-2">
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+            <input type="hidden" name="facturado" value="0">
+            <input type="checkbox" name="facturado" value="1" class="sr-only peer"
+                   {{ old('facturado', $viaje->facturado ?? false) ? 'checked' : '' }}>
+            <span class="relative w-11 h-6 bg-gray-300 rounded-full transition-colors
+                         peer-checked:bg-green-500
+                         after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                         after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
+                         peer-checked:after:translate-x-5"></span>
+            <span class="text-sm font-medium text-gray-700">Viaje facturado</span>
+        </label>
+        <p class="text-xs text-gray-400 mt-1">Marcalo si este viaje/trabajo ya está facturado.</p>
+    </div>
+
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Kg Netos</label>
         <input type="number" name="kg_netos" min="0" step="0.01" placeholder="25000"

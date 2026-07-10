@@ -12,7 +12,7 @@ class ReporteController extends Controller
 {
     public function index(Request $request)
     {
-        $periodo = $request->get('periodo', 'mes');
+        $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
 
         $viajes = Viaje::whereBetween('fecha', [$desde, $hasta])->orderByDesc('fecha')->get();
@@ -44,7 +44,7 @@ class ReporteController extends Controller
                 ? [$hoy->startOfMonth()->toDateString(), $hoy->copy()->startOfMonth()->addDays(14)->toDateString()]
                 : [$hoy->copy()->startOfMonth()->addDays(15)->toDateString(), $hoy->copy()->endOfMonth()->toDateString()],
             'rango'    => [
-                $request->get('desde', $hoy->startOfMonth()->toDateString()),
+                $request->get('desde', $hoy->copy()->subDays(60)->toDateString()),
                 $request->get('hasta', $hoy->toDateString()),
             ],
             default    => [$hoy->startOfMonth()->toDateString(), $hoy->copy()->endOfMonth()->toDateString()],

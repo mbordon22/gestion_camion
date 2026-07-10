@@ -11,7 +11,7 @@ class CombustibleController extends Controller
 {
     public function index(Request $request)
     {
-        $periodo = $request->get('periodo', 'mes');
+        $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
 
         $registros = Combustible::with('medioPago')
@@ -120,7 +120,7 @@ class CombustibleController extends Controller
             'hoy'    => [$hoy->toDateString(), $hoy->toDateString()],
             'semana' => [$hoy->startOfWeek()->toDateString(), $hoy->copy()->endOfWeek()->toDateString()],
             'rango'  => [
-                $request->get('desde', $hoy->startOfMonth()->toDateString()),
+                $request->get('desde', $hoy->copy()->subDays(60)->toDateString()),
                 $request->get('hasta', $hoy->toDateString()),
             ],
             default  => [$hoy->startOfMonth()->toDateString(), $hoy->copy()->endOfMonth()->toDateString()],
