@@ -99,14 +99,12 @@
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha orden y hora</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha carga</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Nro. Ingreso</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Tipo Ingreso</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Bolsas</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Precio/bolsa</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-600">Facturado</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Kg Netos</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Destino</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Motivo</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
                     </tr>
                 </thead>
@@ -120,7 +118,6 @@
                                 {{ $viaje->fecha_carga ? $viaje->fecha_carga->format('d/m/Y') : '—' }}
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $viaje->nro_ingreso ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $viaje->tipo_ingreso ?? '—' }}</td>
                             <td class="px-4 py-3 text-right text-gray-700">{{ number_format($viaje->bolsas, 0, ',', '.') }}</td>
                             <td class="px-4 py-3 text-right text-gray-700">$ {{ number_format($viaje->precio_bolsa, 2, ',', '.') }}</td>
                             <td class="px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
@@ -141,7 +138,6 @@
                                 {{ $viaje->kg_netos ? number_format($viaje->kg_netos, 0, ',', '.') : '—' }}
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $viaje->destino ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600 max-w-xs truncate" title="{{ $viaje->motivo }}">{{ $viaje->motivo ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">
                                 <div class="flex justify-center gap-2">
                                     <a href="{{ route('viajes.edit', $viaje) }}"
@@ -164,9 +160,9 @@
                 </tbody>
                 <tfoot class="bg-gray-50 font-semibold">
                     <tr>
-                        <td colspan="6" class="px-4 py-3 text-right text-gray-700">Total:</td>
+                        <td colspan="5" class="px-4 py-3 text-right text-gray-700">Total:</td>
                         <td class="px-4 py-3 text-right text-green-700 text-base">$ {{ number_format($totalPeriodo, 2, ',', '.') }}</td>
-                        <td colspan="5"></td>
+                        <td colspan="4"></td>
                     </tr>
                 </tfoot>
             </table>
