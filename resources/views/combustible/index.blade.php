@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Combustible')
+@section('container-class', 'w-full')
 
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -17,6 +18,18 @@
 {{-- Filtro --}}
 <div class="bg-white rounded-lg shadow p-4 mb-5">
     <form method="GET" action="{{ route('combustible.index') }}" class="flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
+            <select name="camion_id" onchange="this.form.submit()"
+                    class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <option value="">Todos los camiones</option>
+                @foreach($camiones as $camion)
+                    <option value="{{ $camion->id }}" {{ (string) $camionId === (string) $camion->id ? 'selected' : '' }}>
+                        {{ $camion->nombre() }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Período</label>
             <select name="periodo" onchange="this.form.submit()"
@@ -64,73 +77,104 @@
 
 {{-- Tabla --}}
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    @if($registros->isEmpty())
-        <div class="text-center py-12 text-gray-500">
-            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-            </svg>
-            <p>No hay registros de combustible en este período.</p>
-        </div>
-    @else
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Litros</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Precio/litro</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Km odómetro</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Lugar</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Medio</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha pago</th>
-                        <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
+    <div class="overflow-x-auto">
+        <table id="tabla-combustible" class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Camión</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Litros</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Precio/litro</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Km odómetro</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Lugar</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Medio</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha pago</th>
+                    <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach($registros as $reg)
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-4 py-3 text-gray-600">{{ $reg->camion?->patente ?? '—' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $reg->fecha->timestamp }}">
+                            {{ $reg->fecha->format('d/m/Y') }}
+                        </td>
+                        <td class="px-4 py-3 text-right text-gray-700" data-order="{{ $reg->litros }}">
+                            {{ number_format($reg->litros, 2, ',', '.') }} L
+                        </td>
+                        <td class="px-4 py-3 text-right text-gray-700" data-order="{{ $reg->precio_litro }}">
+                            $ {{ number_format($reg->precio_litro, 2, ',', '.') }}
+                        </td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900" data-order="{{ $reg->total }}">
+                            $ {{ number_format($reg->total, 2, ',', '.') }}
+                        </td>
+                        <td class="px-4 py-3 text-right text-gray-600" data-order="{{ $reg->km_odometro ?? 0 }}">
+                            {{ $reg->km_odometro ? number_format($reg->km_odometro, 0, ',', '.') . ' km' : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">{{ $reg->lugar ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $reg->medioPago?->nombre ?? '—' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-600" data-order="{{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->timestamp : 0 }}">
+                            {{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <a href="{{ route('combustible.edit', $reg) }}"
+                                   class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+                                    Editar
+                                </a>
+                                <form method="POST" action="{{ route('combustible.destroy', $reg) }}"
+                                      onsubmit="return confirm('¿Eliminar este registro?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                            class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach($registros as $reg)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-700">{{ $reg->fecha->format('d/m/Y') }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ number_format($reg->litros, 2, ',', '.') }} L</td>
-                            <td class="px-4 py-3 text-right text-gray-700">$ {{ number_format($reg->precio_litro, 2, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($reg->total, 2, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-right text-gray-600">
-                                {{ $reg->km_odometro ? number_format($reg->km_odometro, 0, ',', '.') . ' km' : '—' }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">{{ $reg->lugar ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $reg->medioPago?->nombre ?? '—' }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-600">{{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}</td>
-                            <td class="px-4 py-3 text-center">
-                                <div class="flex justify-center gap-2">
-                                    <a href="{{ route('combustible.edit', $reg) }}"
-                                       class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
-                                        Editar
-                                    </a>
-                                    <form method="POST" action="{{ route('combustible.destroy', $reg) }}"
-                                          onsubmit="return confirm('¿Eliminar este registro?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
-                                            Eliminar
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-                <tfoot class="bg-gray-50 font-semibold">
-                    <tr>
-                        <td class="px-4 py-3 text-right text-gray-700">Total:</td>
-                        <td class="px-4 py-3 text-right text-orange-700">{{ number_format($totalLitros, 2, ',', '.') }} L</td>
-                        <td></td>
-                        <td class="px-4 py-3 text-right text-red-700">$ {{ number_format($totalGasto, 2, ',', '.') }}</td>
-                        <td colspan="5"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    @endif
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 </div>
+
+@push('scripts')
+<script>
+$(function () {
+    $('#tabla-combustible').DataTable({
+        pageLength: 25,
+        pagingType: 'simple_numbers',
+        lengthMenu: [[10, 25, 50, 100, -1], ['10', '25', '50', '100', 'Todos']],
+        order: [[1, 'desc']],
+        createdRow: function(row) {
+            $(row).removeClass('even:bg-gray-50 dark:even:bg-gray-900/50 odd:bg-white dark:odd:bg-gray-950');
+        },
+        columnDefs: [
+            { orderable: false, targets: [9] },
+            { searchable: false, targets: [9] },
+        ],
+        language: {
+            decimal:        ',',
+            thousands:      '.',
+            emptyTable:     'No hay registros de combustible en este período.',
+            info:           'Mostrando _START_ a _END_ de _TOTAL_ registros',
+            infoEmpty:      'Mostrando 0 a 0 de 0 registros',
+            infoFiltered:   '(filtrado de _MAX_ en total)',
+            lengthMenu:     'Mostrar _MENU_ registros',
+            loadingRecords: 'Cargando...',
+            processing:     'Procesando...',
+            search:         'Buscar:',
+            zeroRecords:    'No se encontraron registros.',
+            paginate: {
+                next:     '›',
+                previous: '‹',
+            },
+        },
+    });
+});
+</script>
+@endpush
 @endsection

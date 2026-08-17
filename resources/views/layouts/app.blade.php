@@ -17,12 +17,57 @@
             }
         }
     </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.tailwindcss.min.css">
+    <style>
+        /* DataTables: selector y campo de búsqueda */
+        div.dt-container select,
+        div.dt-container input[type="search"] {
+            background-color: #fff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+        }
+        div.dt-container select:focus,
+        div.dt-container input[type="search"]:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 0;
+        }
+        /* Sin zebra striping en DataTables */
+        #tabla-viajes tbody tr.odd,
+        #tabla-viajes tbody tr.even,
+        table.dataTable tbody tr.odd,
+        table.dataTable tbody tr.even {
+            background-color: #ffffff;
+        }
+        table.dataTable tbody tr:hover {
+            background-color: #e5e7eb !important;
+        }
+        /* Botones de paginación */
+        div.dt-container .dt-paging button {
+            background-color: #fff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.6rem;
+        }
+        div.dt-container .dt-paging button.current,
+        div.dt-container .dt-paging button:hover:not(:disabled) {
+            background-color: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
+        }
+        div.dt-container .dt-paging button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    </style>
+    @livewireStyles
 </head>
 <body class="bg-gray-100 min-h-screen">
 
 <nav class="bg-blue-700 text-white shadow-lg">
-    <div class="max-w-6xl mx-auto px-4">
+    <div class="mx-auto px-4">
         <div class="flex items-center justify-between h-16">
             <a href="{{ route('viajes.index') }}" class="flex items-center gap-2 font-bold text-lg">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,6 +95,11 @@
                    class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
                           {{ request()->routeIs('combustible.*') ? 'bg-blue-900' : '' }}">
                     Combustible
+                </a>
+                <a href="{{ route('camiones.index') }}"
+                   class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
+                          {{ request()->routeIs('camiones.*') ? 'bg-blue-900' : '' }}">
+                    Camiones
                 </a>
                 <a href="{{ route('mantenimiento.index') }}"
                    class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
@@ -95,6 +145,11 @@
 
         <!-- Mobile menu -->
         <div id="mobile-menu" class="hidden sm:hidden pb-3 space-y-1">
+            <a href="{{ route('camiones.index') }}"
+               class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
+                      {{ request()->routeIs('camiones.*') ? 'bg-blue-900' : '' }}">
+                Camiones
+            </a>
             <a href="{{ route('viajes.index') }}"
                class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
                       {{ request()->routeIs('viajes.*') ? 'bg-blue-900' : '' }}">
@@ -146,7 +201,7 @@
     </div>
 </nav>
 
-<main class="max-w-6xl mx-auto px-4 py-6">
+<main class="@yield('container-class', 'max-w-6xl') mx-auto px-4 py-6">
 
     @if(session('success'))
         <div class="mb-4 bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded flex justify-between items-center">
@@ -165,11 +220,15 @@
     @yield('content')
 </main>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.tailwindcss.min.js"></script>
 <script>
     document.getElementById('menu-btn').addEventListener('click', function () {
         document.getElementById('mobile-menu').classList.toggle('hidden');
     });
 </script>
+@stack('scripts')
 
 </body>
 </html>

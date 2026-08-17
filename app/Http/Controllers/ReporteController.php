@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Viaje;
 use App\Models\Combustible;
 use App\Models\Mantenimiento;
+use App\Models\Camion;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -14,10 +15,17 @@ class ReporteController extends Controller
     {
         $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
+        $camionId = $request->get('camion_id');
 
-        $viajes = Viaje::whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)->orderByDesc('fecha')->get();
-        $combustible = Combustible::whereBetween('fecha', [$desde, $hasta])->get();
-        $mantenimiento = Mantenimiento::whereBetween('fecha', [$desde, $hasta])->get();
+        $viajes = Viaje::whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
+            ->orderByDesc('fecha')->get();
+        $combustible = Combustible::whereBetween('fecha', [$desde, $hasta])
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
+            ->get();
+        $mantenimiento = Mantenimiento::whereBetween('fecha', [$desde, $hasta])
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
+            ->get();
 
         $totalIngresos     = $viajes->sum('total');
         $totalCombustible  = $combustible->sum('total');
@@ -27,10 +35,13 @@ class ReporteController extends Controller
         $cantidadViajes    = $viajes->count();
         $litrosCargados    = $combustible->sum('litros');
 
+        $camiones = Camion::orderBy('patente')->get();
+
         return view('reportes.index', compact(
             'viajes', 'periodo', 'desde', 'hasta',
             'totalIngresos', 'totalCombustible', 'totalMantenimiento',
-            'totalGastos', 'resultado', 'cantidadViajes', 'litrosCargados'
+            'totalGastos', 'resultado', 'cantidadViajes', 'litrosCargados',
+            'camiones', 'camionId'
         ));
     }
 

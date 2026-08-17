@@ -11,11 +11,12 @@ class Mantenimiento extends Model
     protected $table = 'mantenimiento';
 
     protected $fillable = [
-        'fecha', 'tipo', 'monto', 'km_actuales',
+        'camion_id', 'fecha', 'tipo', 'monto', 'km_actuales',
         'proximo_service', 'detalle', 'medio_pago_id', 'fecha_vencimiento', 'created_at',
     ];
 
     protected $casts = [
+        'camion_id' => 'integer',
         'fecha' => 'date',
         'monto' => 'decimal:2',
         'km_actuales' => 'integer',
@@ -27,6 +28,11 @@ class Mantenimiento extends Model
     public function medioPago()
     {
         return $this->belongsTo(MedioPago::class);
+    }
+
+    public function camion()
+    {
+        return $this->belongsTo(Camion::class);
     }
 
     public static array $tipos = [

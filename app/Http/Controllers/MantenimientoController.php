@@ -4,24 +4,34 @@ namespace App\Http\Controllers;
 
 use App\Models\Mantenimiento;
 use App\Models\MedioPago;
+use App\Models\Camion;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class MantenimientoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $registros = Mantenimiento::with('medioPago')->orderByDesc('fecha')->orderByDesc('id')->get();
+        $camionId = $request->get('camion_id');
+
+        $registros = Mantenimiento::with(['medioPago', 'camion'])
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
+            ->orderByDesc('fecha')
+            ->orderByDesc('id')
+            ->get();
         $proximoService = Mantenimiento::whereNotNull('proximo_service')->orderByDesc('id')->value('proximo_service');
 
-        return view('mantenimiento.index', compact('registros', 'proximoService'));
+        $camiones = Camion::orderBy('patente')->get();
+
+        return view('mantenimiento.index', compact('registros', 'proximoService', 'camiones', 'camionId'));
     }
 
     public function create()
     {
         $tipos = Mantenimiento::$tipos;
         $mediosPago = MedioPago::where('activo', true)->orderBy('nombre')->get();
-        return view('mantenimiento.create', compact('tipos', 'mediosPago'));
+        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
+        return view('mantenimiento.create', compact('tipos', 'mediosPago', 'camiones'));
     }
 
     public function store(Request $request)
@@ -46,7 +56,8 @@ class MantenimientoController extends Controller
     {
         $tipos = Mantenimiento::$tipos;
         $mediosPago = MedioPago::where('activo', true)->orderBy('nombre')->get();
-        return view('mantenimiento.edit', compact('mantenimiento', 'tipos', 'mediosPago'));
+        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
+        return view('mantenimiento.edit', compact('mantenimiento', 'tipos', 'mediosPago', 'camiones'));
     }
 
     public function update(Request $request, Mantenimiento $mantenimiento)
@@ -76,6 +87,7 @@ class MantenimientoController extends Controller
     private function validar(Request $request): array
     {
         return $request->validate([
+            'camion_id'         => 'required|exists:camiones,id',
             'fecha'             => 'required|date',
             'tipo'              => 'required|in:aceite,filtros,neumaticos,frenos,repuesto,service,otro',
             'monto'             => 'required|numeric|min:0',

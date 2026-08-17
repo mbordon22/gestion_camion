@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Viaje;
+use App\Models\Camion;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -12,9 +13,12 @@ class ViajeController extends Controller
     {
         $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
+        $camionId = $request->get('camion_id');
 
-        $viajes = Viaje::whereDate('fecha', '>=', $desde)
+        $viajes = Viaje::with('camion')
+            ->whereDate('fecha', '>=', $desde)
             ->whereDate('fecha', '<=', $hasta)
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->orderByDesc('fecha')
             ->orderByDesc('id')
             ->get();
@@ -30,20 +34,25 @@ class ViajeController extends Controller
         $cantidadFacturados  = $facturados->count();
         $cantidadNoFacturados = $noFacturados->count();
 
+        $camiones = Camion::orderBy('patente')->get();
+
         return view('viajes.index', compact(
             'viajes', 'totalPeriodo', 'cantidadViajes', 'periodo', 'desde', 'hasta',
-            'totalFacturado', 'totalNoFacturado', 'cantidadFacturados', 'cantidadNoFacturados'
+            'totalFacturado', 'totalNoFacturado', 'cantidadFacturados', 'cantidadNoFacturados',
+            'camiones', 'camionId'
         ));
     }
 
     public function create()
     {
-        return view('viajes.create');
+        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
+        return view('viajes.create', compact('camiones'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'camion_id'    => 'required|exists:camiones,id',
             'fecha'        => 'required|date',
             'fecha_carga'  => 'nullable|date',
             'nro_ingreso'  => 'nullable|string|max:50',
@@ -67,12 +76,14 @@ class ViajeController extends Controller
 
     public function edit(Viaje $viaje)
     {
-        return view('viajes.edit', compact('viaje'));
+        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
+        return view('viajes.edit', compact('viaje', 'camiones'));
     }
 
     public function update(Request $request, Viaje $viaje)
     {
         $validated = $request->validate([
+            'camion_id'    => 'required|exists:camiones,id',
             'fecha'        => 'required|date',
             'fecha_carga'  => 'nullable|date',
             'nro_ingreso'  => 'nullable|string|max:50',

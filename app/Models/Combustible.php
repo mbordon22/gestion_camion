@@ -11,11 +11,12 @@ class Combustible extends Model
     protected $table = 'combustible';
 
     protected $fillable = [
-        'fecha', 'litros', 'precio_litro', 'total',
+        'camion_id', 'fecha', 'litros', 'precio_litro', 'total',
         'km_odometro', 'lugar', 'medio_pago_id', 'fecha_vencimiento', 'created_at',
     ];
 
     protected $casts = [
+        'camion_id' => 'integer',
         'fecha' => 'date',
         'litros' => 'decimal:2',
         'precio_litro' => 'decimal:2',
@@ -28,5 +29,10 @@ class Combustible extends Model
     public function medioPago()
     {
         return $this->belongsTo(MedioPago::class);
+    }
+
+    public function camion()
+    {
+        return $this->belongsTo(Camion::class);
     }
 }

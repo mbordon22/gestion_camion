@@ -1,5 +1,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
+    @include('partials._camion_select', ['camiones' => $camiones, 'camionActual' => $mantenimiento->camion_id ?? null])
+
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Fecha <span class="text-red-500">*</span></label>
         <input type="date" name="fecha"

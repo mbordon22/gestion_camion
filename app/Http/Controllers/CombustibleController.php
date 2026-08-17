@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Combustible;
 use App\Models\MedioPago;
+use App\Models\Camion;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -13,9 +14,11 @@ class CombustibleController extends Controller
     {
         $periodo = $request->get('periodo', 'rango');
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
+        $camionId = $request->get('camion_id');
 
-        $registros = Combustible::with('medioPago')
+        $registros = Combustible::with(['medioPago', 'camion'])
             ->whereBetween('fecha', [$desde, $hasta])
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->orderByDesc('fecha')
             ->orderByDesc('id')
             ->get();
@@ -23,13 +26,16 @@ class CombustibleController extends Controller
         $totalLitros = $registros->sum('litros');
         $totalGasto  = $registros->sum('total');
 
-        return view('combustible.index', compact('registros', 'totalLitros', 'totalGasto', 'periodo', 'desde', 'hasta'));
+        $camiones = Camion::orderBy('patente')->get();
+
+        return view('combustible.index', compact('registros', 'totalLitros', 'totalGasto', 'periodo', 'desde', 'hasta', 'camiones', 'camionId'));
     }
 
     public function create()
     {
         $mediosPago = MedioPago::where('activo', true)->orderBy('nombre')->get();
-        return view('combustible.create', compact('mediosPago'));
+        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
+        return view('combustible.create', compact('mediosPago', 'camiones'));
     }
 
     public function store(Request $request)
@@ -53,7 +59,8 @@ class CombustibleController extends Controller
     public function edit(Combustible $combustible)
     {
         $mediosPago = MedioPago::where('activo', true)->orderBy('nombre')->get();
-        return view('combustible.edit', compact('combustible', 'mediosPago'));
+        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
+        return view('combustible.edit', compact('combustible', 'mediosPago', 'camiones'));
     }
 
     public function update(Request $request, Combustible $combustible)
@@ -83,6 +90,7 @@ class CombustibleController extends Controller
     private function validar(Request $request): array
     {
         return $request->validate([
+            'camion_id'         => 'required|exists:camiones,id',
             'fecha'             => 'required|date',
             'litros'            => 'required|numeric|min:0',
             'precio_litro'      => 'required|numeric|min:0',

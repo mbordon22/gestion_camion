@@ -14,6 +14,24 @@
     </a>
 </div>
 
+{{-- Filtro de camión --}}
+<div class="bg-white rounded-lg shadow p-4 mb-5">
+    <form method="GET" action="{{ route('mantenimiento.index') }}" class="flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
+            <select name="camion_id" onchange="this.form.submit()"
+                    class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <option value="">Todos los camiones</option>
+                @foreach($camiones as $camion)
+                    <option value="{{ $camion->id }}" {{ (string) $camionId === (string) $camion->id ? 'selected' : '' }}>
+                        {{ $camion->nombre() }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </form>
+</div>
+
 @if($proximoService)
     <div class="mb-5 bg-orange-50 border border-orange-300 text-orange-800 rounded-lg px-4 py-3 flex items-start gap-3">
         <svg class="w-5 h-5 mt-0.5 flex-shrink-0 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,6 +59,7 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Camión</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Tipo</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Monto</th>
@@ -55,6 +74,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach($registros as $reg)
                         <tr class="hover:bg-gray-50 transition">
+                            <td class="px-4 py-3 text-gray-600">{{ $reg->camion?->patente ?? '—' }}</td>
                             <td class="px-4 py-3 whitespace-nowrap text-gray-700">{{ $reg->fecha->format('d/m/Y') }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ViajeController;
 use App\Http\Controllers\CombustibleController;
 use App\Http\Controllers\MantenimientoController;
+use App\Http\Controllers\CamionController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\MedioPagoController;
 use App\Http\Controllers\PrestamoController;
@@ -17,6 +18,8 @@ Route::middleware('auth')->group(function () {
     // Breeze redirige acá tras el login; lo mandamos a la home real de la app.
     Route::get('/dashboard', fn() => redirect()->route('viajes.index'))->name('dashboard');
 
+    Route::resource('camiones', CamionController::class)->except(['show'])
+        ->parameters(['camiones' => 'camion']);
     Route::resource('viajes', ViajeController::class)->except(['show']);
     Route::patch('viajes/{viaje}/facturado', [ViajeController::class, 'toggleFacturado'])->name('viajes.facturado');
     Route::resource('combustible', CombustibleController::class)->except(['show']);
