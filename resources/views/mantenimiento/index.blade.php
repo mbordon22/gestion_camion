@@ -15,22 +15,24 @@
 </div>
 
 {{-- Filtro de camión --}}
-<div class="bg-white rounded-lg shadow p-4 mb-5">
-    <form method="GET" action="{{ route('mantenimiento.index') }}" class="flex flex-wrap gap-3 items-end">
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
-            <select name="camion_id" onchange="this.form.submit()"
-                    class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <option value="">Todos los camiones</option>
-                @foreach($camiones as $camion)
-                    <option value="{{ $camion->id }}" {{ (string) $camionId === (string) $camion->id ? 'selected' : '' }}>
-                        {{ $camion->nombre() }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-    </form>
-</div>
+@if($camiones->count() > 1)
+    <div class="bg-white rounded-lg shadow p-4 mb-5">
+        <form method="GET" action="{{ route('mantenimiento.index') }}" class="flex flex-wrap gap-3 items-end">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
+                <select name="camion_id" onchange="this.form.submit()"
+                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">Todos los camiones</option>
+                    @foreach($camiones as $camion)
+                        <option value="{{ $camion->id }}" {{ (string) $camionId === (string) $camion->id ? 'selected' : '' }}>
+                            {{ $camion->nombre() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
+    </div>
+@endif
 
 @if($proximoService)
     <div class="mb-5 bg-orange-50 border border-orange-300 text-orange-800 rounded-lg px-4 py-3 flex items-start gap-3">

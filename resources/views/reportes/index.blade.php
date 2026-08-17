@@ -21,18 +21,20 @@
 {{-- Selector de período --}}
 <div class="bg-white rounded-lg shadow p-4 mb-6">
     <form method="GET" action="{{ route('reportes.index') }}" class="flex flex-wrap gap-3 items-end">
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
-            <select name="camion_id" onchange="this.form.submit()"
-                    class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <option value="">Todos los camiones</option>
-                @foreach($camiones as $camion)
-                    <option value="{{ $camion->id }}" {{ (string) $camionId === (string) $camion->id ? 'selected' : '' }}>
-                        {{ $camion->nombre() }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+        @if($camiones->count() > 1)
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
+                <select name="camion_id" onchange="this.form.submit()"
+                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">Todos los camiones</option>
+                    @foreach($camiones as $camion)
+                        <option value="{{ $camion->id }}" {{ (string) $camionId === (string) $camion->id ? 'selected' : '' }}>
+                            {{ $camion->nombre() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Período</label>
             <select name="periodo" onchange="this.form.submit()"
@@ -118,24 +120,18 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Nro. Ingreso</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Bolsas</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Ruta</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Carga</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Kg Netos</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Destino</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($viajes as $viaje)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-gray-700">{{ $viaje->fecha->format('d/m/Y') }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $viaje->nro_ingreso ?? '—' }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ number_format($viaje->bolsas, 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $viaje->ruta() }}</td>
+                            <td class="px-4 py-3 text-gray-700">{{ $viaje->resumenCarga() }}</td>
                             <td class="px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">
-                                {{ $viaje->kg_netos ? number_format($viaje->kg_netos, 0, ',', '.') : '—' }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">{{ $viaje->destino ?? '—' }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -143,7 +139,6 @@
                     <tr>
                         <td colspan="3" class="px-4 py-3 text-right text-gray-700">Total ingresos:</td>
                         <td class="px-4 py-3 text-right text-green-700">$ {{ number_format($totalIngresos, 2, ',', '.') }}</td>
-                        <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </table>

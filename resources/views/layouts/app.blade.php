@@ -86,6 +86,11 @@
 
             <!-- Desktop nav -->
             <div class="hidden sm:flex items-center gap-1">
+                <a href="{{ route('inicio') }}"
+                   class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
+                          {{ request()->routeIs('inicio') ? 'bg-blue-900' : '' }}">
+                    Inicio
+                </a>
                 <a href="{{ route('viajes.index') }}"
                    class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
                           {{ request()->routeIs('viajes.*') ? 'bg-blue-900' : '' }}">
@@ -145,6 +150,11 @@
 
         <!-- Mobile menu -->
         <div id="mobile-menu" class="hidden sm:hidden pb-3 space-y-1">
+            <a href="{{ route('inicio') }}"
+               class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
+                      {{ request()->routeIs('inicio') ? 'bg-blue-900' : '' }}">
+                Inicio
+            </a>
             <a href="{{ route('camiones.index') }}"
                class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
                       {{ request()->routeIs('camiones.*') ? 'bg-blue-900' : '' }}">

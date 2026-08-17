@@ -21,3 +21,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Backups locales de la base
+backup-*.sql
