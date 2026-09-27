@@ -9,8 +9,9 @@ class Viaje extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'camion_id', 'cliente_id', 'chofer_id', 'modo_cobro', 'fecha', 'fecha_carga',
+        'camion_id', 'cliente_id', 'chofer_id', 'equipo_id', 'modo_cobro', 'fecha', 'fecha_carga',
         'nro_orden', 'producto', 'cantidad', 'unidad', 'precio_unitario', 'total', 'cobrado',
+        'alquiler_porcentaje', 'alquiler_monto', 'alquiler_pagado_el',
         'origen', 'destino', 'km_recorridos', 'observaciones', 'created_at',
     ];
 
@@ -18,12 +19,16 @@ class Viaje extends Model
         'camion_id' => 'integer',
         'cliente_id' => 'integer',
         'chofer_id' => 'integer',
+        'equipo_id' => 'integer',
         'fecha' => 'datetime',
         'fecha_carga' => 'date',
         'cantidad' => 'decimal:2',
         'precio_unitario' => 'decimal:2',
         'total' => 'decimal:2',
         'cobrado' => 'boolean',
+        'alquiler_porcentaje' => 'decimal:2',
+        'alquiler_monto' => 'decimal:2',
+        'alquiler_pagado_el' => 'date',
         'km_recorridos' => 'integer',
         'created_at' => 'datetime',
     ];
@@ -74,6 +79,23 @@ class Viaje extends Model
     public function chofer()
     {
         return $this->belongsTo(Chofer::class);
+    }
+
+    public function equipo()
+    {
+        return $this->belongsTo(Equipo::class);
+    }
+
+    /** Lo que le toca al dueño del equipo alquilado y todavía no se le pagó. */
+    public function scopeAlquilerSinPagar($query)
+    {
+        return $query->where('alquiler_monto', '>', 0)->whereNull('alquiler_pagado_el');
+    }
+
+    /** Lo que queda para el camión después de pagarle al dueño del equipo. */
+    public function netoCamion(): float
+    {
+        return (float) $this->total - (float) $this->alquiler_monto;
     }
 
     public function esMontoFijo(): bool

@@ -7,6 +7,7 @@ use App\Models\Camion;
 use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Destino;
+use App\Models\Equipo;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -30,7 +31,7 @@ class ViajeController extends Controller
         $clienteId = $request->get('cliente_id');
         $choferId = $request->get('chofer_id');
 
-        $viajes = Viaje::with('camion', 'cliente', 'chofer')
+        $viajes = Viaje::with('camion', 'cliente', 'chofer', 'equipo')
             ->whereDate('fecha', '>=', $desde)
             ->whereDate('fecha', '<=', $hasta)
             ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
@@ -41,6 +42,7 @@ class ViajeController extends Controller
             ->get();
 
         $totalPeriodo = $viajes->sum('total');
+        $totalAlquiler = $viajes->sum('alquiler_monto');
         $cantidadViajes = $viajes->count();
 
         $cobrados   = $viajes->where('cobrado', true);
@@ -56,7 +58,7 @@ class ViajeController extends Controller
         $choferes = Chofer::orderBy('nombre')->get();
 
         return view('viajes.index', compact(
-            'viajes', 'totalPeriodo', 'cantidadViajes', 'periodo', 'desde', 'hasta',
+            'viajes', 'totalPeriodo', 'totalAlquiler', 'cantidadViajes', 'periodo', 'desde', 'hasta',
             'totalCobrado', 'totalNoCobrado', 'cantidadCobrados', 'cantidadNoCobrados',
             'camiones', 'camionId', 'clientes', 'clienteId', 'choferes', 'choferId'
         ));
@@ -73,18 +75,20 @@ class ViajeController extends Controller
         $clientes = $this->clientesParaFormulario($viaje);
         $choferes = $this->choferesParaFormulario($viaje);
         $destinos = $this->destinosParaFormulario($viaje);
+        $equipos = $this->equiposParaFormulario($viaje);
         $productos = Viaje::productosSugeridos();
 
-        // Casi siempre se trabaja para el mismo cliente y con el mismo chofer:
-        // vienen elegidos los del último viaje. Al repetir no hacen falta,
-        // porque ya vienen los del viaje que se repite.
-        $ultimo = Viaje::latest('id')->first(['cliente_id', 'chofer_id']);
+        // Casi siempre se trabaja para el mismo cliente, con el mismo chofer y
+        // el mismo equipo enganchado: vienen elegidos los del último viaje. Al
+        // repetir no hacen falta, porque ya vienen los del viaje que se repite.
+        $ultimo = Viaje::latest('id')->first(['cliente_id', 'chofer_id', 'equipo_id']);
         $clienteSugerido = $ultimo?->cliente_id;
         $choferSugerido = $ultimo?->chofer_id;
+        $equipoSugerido = $ultimo?->equipo_id;
 
         return view('viajes.create', compact(
             'viaje', 'camiones', 'clientes', 'clienteSugerido',
-            'choferes', 'choferSugerido', 'destinos', 'productos'
+            'choferes', 'choferSugerido', 'destinos', 'equipos', 'equipoSugerido', 'productos'
         ));
     }
 
@@ -109,7 +113,7 @@ class ViajeController extends Controller
         }
 
         $repetido = new Viaje($original->only([
-            'camion_id', 'cliente_id', 'chofer_id', 'modo_cobro', 'producto',
+            'camion_id', 'cliente_id', 'chofer_id', 'equipo_id', 'modo_cobro', 'producto',
             'unidad', 'precio_unitario', 'origen', 'destino', 'km_recorridos',
         ]));
 
@@ -132,14 +136,15 @@ class ViajeController extends Controller
         $clientes = $this->clientesParaFormulario($viaje);
         $choferes = $this->choferesParaFormulario($viaje);
         $destinos = $this->destinosParaFormulario($viaje);
+        $equipos = $this->equiposParaFormulario($viaje);
         $productos = Viaje::productosSugeridos();
 
-        return view('viajes.edit', compact('viaje', 'camiones', 'clientes', 'choferes', 'destinos', 'productos'));
+        return view('viajes.edit', compact('viaje', 'camiones', 'clientes', 'choferes', 'destinos', 'equipos', 'productos'));
     }
 
     public function update(Request $request, Viaje $viaje)
     {
-        $viaje->update($this->validar($request));
+        $viaje->update($this->validar($request, $viaje));
 
         return redirect()->route('viajes.index')->with('success', 'Viaje actualizado correctamente.');
     }
@@ -205,8 +210,12 @@ class ViajeController extends Controller
      * La carga (producto, cantidad y unidad) se guarda en los dos modos: qué
      * llevaste y cómo lo cobrás son datos distintos. Un flete de precio cerrado
      * igual movió 27,7 toneladas y ese peso tiene que quedar registrado.
+     *
+     * Con un equipo alquilado también resuelve cuánto se lleva el dueño, sobre
+     * el total bruto. $anterior es el viaje que se edita, para respetar lo que
+     * ya se había grabado.
      */
-    private function validar(Request $request): array
+    private function validar(Request $request, ?Viaje $anterior = null): array
     {
         $clienteNuevo = $request->input('cliente_id') === self::NUEVO;
         $choferNuevo  = $request->input('chofer_id') === self::NUEVO;
@@ -218,6 +227,7 @@ class ViajeController extends Controller
             'cliente_nuevo'   => $clienteNuevo ? 'required|string|max:100' : 'nullable',
             'chofer_id'       => $choferNuevo ? 'nullable' : 'nullable|exists:choferes,id',
             'chofer_nuevo'    => $choferNuevo ? 'required|string|max:100' : 'nullable',
+            'equipo_id'       => 'nullable|exists:equipos,id',
             'modo_cobro'      => 'required|in:fijo,cantidad',
             'fecha'           => 'required|date',
             'fecha_carga'     => 'nullable|date',
@@ -249,6 +259,18 @@ class ViajeController extends Controller
         }
 
         $validated['cobrado'] = $request->boolean('cobrado');
+
+        $equipo = isset($validated['equipo_id']) ? Equipo::find($validated['equipo_id']) : null;
+
+        $validated = array_merge($validated, $equipo
+            ? $equipo->alquilerDe((float) $validated['total'], $anterior)
+            : ['alquiler_porcentaje' => null, 'alquiler_monto' => null]);
+
+        // Si cambió el equipo, lo que se le haya pagado al dueño anterior ya
+        // no corresponde a este viaje.
+        if (! $validated['alquiler_monto'] || $anterior?->equipo_id !== $equipo?->id) {
+            $validated['alquiler_pagado_el'] = null;
+        }
 
         // Alta de cliente y de chofer desde el mismo formulario. Si ya existía uno
         // con ese nombre se usa ése, para no duplicarlo por haberlo escrito de nuevo.
@@ -295,6 +317,15 @@ class ViajeController extends Controller
     {
         return Chofer::where('activo', true)
             ->when($viaje?->chofer_id, fn ($q, $id) => $q->orWhere('id', $id))
+            ->orderBy('nombre')
+            ->get();
+    }
+
+    /** Los equipos activos, más el del viaje que se edita aunque ya no lo esté. */
+    private function equiposParaFormulario(?Viaje $viaje = null)
+    {
+        return Equipo::where('activo', true)
+            ->when($viaje?->equipo_id, fn ($q, $id) => $q->orWhere('id', $id))
             ->orderBy('nombre')
             ->get();
     }

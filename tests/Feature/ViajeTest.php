@@ -60,7 +60,7 @@ class ViajeTest extends TestCase
         $this->actingAs($this->usuario())
             ->get(route('viajes.create'))
             ->assertOk()
-            ->assertSee('<input type="hidden" name="camion_id" value="' . $camion->id . '">', false)
+            ->assertSee('<input type="hidden" name="camion_id" id="camion_id" value="' . $camion->id . '">', false)
             ->assertDontSee('— Seleccionar —', false);
     }
 

@@ -14,6 +14,7 @@
     $clienteEsNuevo = $clienteActual === 'nuevo';
     $choferActual   = old('chofer_id', isset($viaje) ? $viaje->chofer_id : ($choferSugerido ?? null));
     $choferEsNuevo  = $choferActual === 'nuevo';
+    $equipoActual   = old('equipo_id', isset($viaje) ? $viaje->equipo_id : ($equipoSugerido ?? null));
     $destinoActual  = old('destino', $viaje->destino ?? '');
     $destinoEsNuevo = $destinoActual === '__nuevo__';
     // Un viaje viejo puede tener un destino que no está en el catálogo: se
@@ -65,6 +66,41 @@
         @error('chofer_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         @error('chofer_nuevo') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
+
+    {{--
+        Lo que va enganchado: si es alquilado, el dueño se lleva una parte del
+        total. Cada opción lleva su acuerdo para que el aviso de abajo haga la
+        cuenta. En un viaje ya cargado con este mismo equipo vale lo que se
+        grabó entonces, no el acuerdo de hoy (Equipo::alquilerDe).
+    --}}
+    @if($equipos->isNotEmpty())
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
+            <select name="equipo_id" id="equipo_id"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400
+                           @error('equipo_id') border-red-400 @enderror">
+                <option value="">Sin equipo</option>
+                @foreach($equipos as $opcion)
+                    @php
+                        $grabado = isset($viaje) && $viaje->exists && $viaje->equipo_id === $opcion->id;
+                        $valorAcuerdo = $opcion->esPorcentaje()
+                            ? ($grabado && $viaje->alquiler_porcentaje !== null ? $viaje->alquiler_porcentaje : $opcion->valor)
+                            : ($grabado && $viaje->alquiler_monto !== null ? $viaje->alquiler_monto : $opcion->valor);
+                    @endphp
+                    <option value="{{ $opcion->id }}"
+                            data-camion="{{ $opcion->camion_id }}"
+                            data-alquilado="{{ $opcion->alquilado ? 1 : 0 }}"
+                            data-modalidad="{{ $opcion->modalidad }}"
+                            data-valor="{{ $valorAcuerdo }}"
+                            {{ (string) $equipoActual === (string) $opcion->id ? 'selected' : '' }}>
+                        {{ $opcion->etiqueta() }}{{ $opcion->alquilado ? ' — alquilado' : '' }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="text-xs text-gray-400 mt-1">Cisterna, equipo cañero… Si es alquilado, se descuenta la parte del dueño.</p>
+            @error('equipo_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+    @endif
 
     {{-- Que se lleva. Texto libre con sugerencias de lo ya cargado. --}}
     <div>
@@ -196,6 +232,10 @@
             <span id="total-hint" class="absolute right-3 top-2 text-xs text-gray-400 {{ $modoActual === 'fijo' ? 'hidden' : '' }}">auto-calculado</span>
         </div>
         @error('total') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        <p id="aviso-alquiler" role="status" aria-live="polite" class="hidden text-xs mt-1 text-gray-600"></p>
+        @if(isset($viaje) && $viaje->alquiler_pagado_el)
+            <p class="text-xs mt-1 text-green-700">Al dueño del equipo ya se le pagó este viaje el {{ $viaje->alquiler_pagado_el->format('d/m/Y') }}.</p>
+        @endif
     </div>
 
     {{-- El destino sale del catálogo y trae consigo el origen y los km. --}}
@@ -296,6 +336,7 @@
         const cantidad = parseFloat(inpCantidad.value) || 0;
         const precio   = parseFloat(inpPrecio.value) || 0;
         inpTotal.value = (cantidad * precio).toFixed(2);
+        mostrarAlquiler();
     }
 
     function aplicarModo() {
@@ -354,6 +395,45 @@
 
         if (opcion.dataset.km) inpKm.value = opcion.dataset.km;
         if (opcion.dataset.origen) inpOrigen.value = opcion.dataset.origen;
+    }
+
+    // Equipo alquilado: cuánto se lleva el dueño y cuánto queda para el
+    // camión. Es sólo el aviso; el monto lo calcula el servidor al guardar.
+    const selEquipo     = document.getElementById('equipo_id');
+    const avisoAlquiler = document.getElementById('aviso-alquiler');
+    const selCamion     = document.getElementById('camion_id');
+    const pesos = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function mostrarAlquiler() {
+        const opcion = selEquipo?.selectedOptions[0];
+        const total  = parseFloat(inpTotal.value);
+
+        if (! opcion || opcion.dataset.alquilado !== '1' || isNaN(total)) {
+            avisoAlquiler.classList.add('hidden');
+            return;
+        }
+
+        const valor = parseFloat(opcion.dataset.valor) || 0;
+        const porcentaje = opcion.dataset.modalidad === 'porcentaje';
+        const alquiler = porcentaje ? Math.round(total * valor) / 100 : valor;
+        const parte = porcentaje ? ' (' + String(valor).replace('.', ',') + '%)' : '';
+
+        avisoAlquiler.textContent = 'El dueño del equipo se lleva $ ' + pesos.format(alquiler) + parte
+            + '. Te quedan $ ' + pesos.format(total - alquiler) + '.';
+        avisoAlquiler.classList.remove('hidden');
+    }
+
+    // El equipo va casi siempre con el mismo camión: si se cambia de camión
+    // y el equipo elegido es de otro, se propone el del camión nuevo.
+    function equipoDelCamion() {
+        if (! selEquipo || ! selCamion) return;
+
+        const actual = selEquipo.selectedOptions[0];
+        if (actual && actual.dataset.camion && actual.dataset.camion !== selCamion.value) {
+            const delCamion = [...selEquipo.options].find(o => o.dataset.camion === selCamion.value);
+            selEquipo.value = delCamion ? delCamion.value : '';
+        }
+        mostrarAlquiler();
     }
 
     const selCliente = conectarNuevo('cliente_id', 'cliente_nuevo', () => {
@@ -512,6 +592,9 @@
         consultarTarifa(false);
     }));
     inpCantidad.addEventListener('input', calcularTotal);
+    inpTotal.addEventListener('input', mostrarAlquiler);
+    selEquipo?.addEventListener('change', mostrarAlquiler);
+    selCamion?.addEventListener('change', equipoDelCamion);
     inpPrecio.addEventListener('input', () => {
         calcularTotal();
         // Escribió un precio a mano: el aviso pasa a marcar la diferencia.
@@ -531,6 +614,7 @@
     inpOrden.addEventListener('change', consultarOrden);
 
     aplicarModo();
+    mostrarAlquiler();
     consultarTarifa(false);
     if (inpOrden.value.trim() !== '') consultarOrden();
 })();

@@ -36,7 +36,7 @@
         {{ $resultado >= 0 ? '' : '−' }}$ {{ number_format(abs($resultado), 2, ',', '.') }}
     </p>
     <p class="text-xs mt-2 {{ $resultado >= 0 ? 'text-blue-600' : 'text-red-600' }}">
-        Lo que entró por viajes menos lo que se gastó en combustible y mantenimiento.
+        Lo que entró por viajes menos lo que se gastó en combustible{{ $totalAlquiler > 0 ? ', mantenimiento y alquiler de equipos' : ' y mantenimiento' }}.
     </p>
 </div>
 
@@ -54,6 +54,9 @@
         <p class="text-xs text-orange-700 mt-1">
             Combustible $ {{ number_format($totalCombustible, 0, ',', '.') }} ·
             Mantenimiento $ {{ number_format($totalMantenimiento, 0, ',', '.') }}
+            @if($totalAlquiler > 0)
+                · Alquiler de equipos $ {{ number_format($totalAlquiler, 0, ',', '.') }}
+            @endif
         </p>
     </div>
 

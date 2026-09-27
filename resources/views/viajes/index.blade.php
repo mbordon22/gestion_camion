@@ -119,6 +119,16 @@
                 <span>Sin cobrar:</span>
                 <span id="bd-total-no-cobrado" class="font-semibold">$ {{ number_format($totalNoCobrado, 2, ',', '.') }}</span>
             </p>
+            @if($totalAlquiler > 0)
+                <p class="flex justify-between text-amber-700 pt-1 mt-1 border-t border-green-200">
+                    <span>Para el dueño del equipo:</span>
+                    <span class="font-semibold">−$ {{ number_format($totalAlquiler, 2, ',', '.') }}</span>
+                </p>
+                <p class="flex justify-between text-green-800">
+                    <span>Te queda:</span>
+                    <span class="font-semibold">$ {{ number_format($totalPeriodo - $totalAlquiler, 2, ',', '.') }}</span>
+                </p>
+            @endif
         </div>
     </div>
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center">
@@ -161,7 +171,14 @@
                         <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $viaje->nro_orden }}">{{ $viaje->nro_orden ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $viaje->ruta() }}</td>
                         <td class="px-4 py-3 text-gray-700">{{ $viaje->resumenCarga() }}</td>
-                        <td class="px-4 py-3 text-right font-semibold text-gray-900" data-order="{{ $viaje->total }}">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap" data-order="{{ $viaje->total }}">
+                            $ {{ number_format($viaje->total, 2, ',', '.') }}
+                            @if($viaje->alquiler_monto > 0)
+                                <p class="text-xs font-normal text-amber-700" title="Lo que se lleva el dueño de {{ $viaje->equipo?->nombre ?? 'el equipo' }}">
+                                    −$ {{ number_format($viaje->alquiler_monto, 2, ',', '.') }} {{ $viaje->equipo?->nombre ?? 'equipo' }}
+                                </p>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-center" data-order="{{ $viaje->cobrado ? 1 : 0 }}">
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer toggle-cobrado"

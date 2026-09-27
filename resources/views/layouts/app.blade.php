@@ -75,6 +75,7 @@
         ['ruta' => 'destinos.index', 'patron' => 'destinos.*', 'texto' => 'Destinos'],
         ['ruta' => 'tarifas.index', 'patron' => 'tarifas.*', 'texto' => 'Tarifas'],
         ['ruta' => 'camiones.index', 'patron' => 'camiones.*', 'texto' => 'Camiones'],
+        ['ruta' => 'equipos.index', 'patron' => 'equipos.*', 'texto' => 'Equipos'],
     ];
 
     $enCatalogos = collect($catalogos)->contains(fn ($c) => request()->routeIs($c['patron']));

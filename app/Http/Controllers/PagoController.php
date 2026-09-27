@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Combustible;
 use App\Models\Mantenimiento;
 use App\Models\Cuota;
+use App\Models\Equipo;
 use Carbon\Carbon;
 
 class PagoController extends Controller
@@ -96,6 +97,16 @@ class PagoController extends Controller
 
         $totalProximoMes = optional($meses->firstWhere('esProximo'))['total'] ?? 0;
 
-        return view('pagos.index', compact('meses', 'atrasado', 'totalAtrasado', 'totalProximoMes', 'mesProximoKey'));
+        // --- Lo que se le debe a los dueños de equipos alquilados ---
+        // No tiene vencimiento: se le paga cuando se arregla con él, así que
+        // va aparte y no dentro de un mes.
+        $alquileres = Equipo::withSum(['viajes as sin_pagar' => fn ($q) => $q->alquilerSinPagar()], 'alquiler_monto')
+            ->withCount(['viajes as viajes_sin_pagar' => fn ($q) => $q->alquilerSinPagar()])
+            ->orderBy('nombre')
+            ->get()
+            ->filter(fn ($equipo) => $equipo->sin_pagar > 0)
+            ->values();
+
+        return view('pagos.index', compact('meses', 'atrasado', 'totalAtrasado', 'totalProximoMes', 'mesProximoKey', 'alquileres'));
     }
 }

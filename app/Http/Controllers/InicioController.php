@@ -43,7 +43,8 @@ class InicioController extends Controller
             ->sum('monto');
 
         $totalIngresos  = $viajes->sum('total');
-        $totalGastos    = $totalCombustible + $totalMantenimiento;
+        $totalAlquiler  = $viajes->sum('alquiler_monto');
+        $totalGastos    = $totalCombustible + $totalMantenimiento + $totalAlquiler;
         $resultado      = $totalIngresos - $totalGastos;
         $cantidadViajes = $viajes->count();
         $totalPorCobrar = $viajes->where('cobrado', false)->sum('total');
@@ -53,7 +54,7 @@ class InicioController extends Controller
 
         return view('inicio', compact(
             'resultado', 'totalIngresos', 'totalGastos', 'totalCombustible',
-            'totalMantenimiento', 'cantidadViajes', 'totalPorCobrar',
+            'totalMantenimiento', 'totalAlquiler', 'cantidadViajes', 'totalPorCobrar',
             'ultimosViajes', 'mes', 'camiones', 'camionId'
         ));
     }

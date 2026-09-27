@@ -53,6 +53,34 @@
     </div>
 @endif
 
+{{-- Dueños de equipos alquilados --}}
+@if($alquileres->isNotEmpty())
+    <div class="bg-amber-50 border border-amber-300 rounded-lg shadow-sm mb-6 overflow-hidden">
+        <div class="px-5 py-3 border-b border-amber-200 flex items-center justify-between">
+            <h2 class="font-semibold text-amber-900">Alquiler de equipos sin pagar</h2>
+            <span class="font-bold text-amber-900">$ {{ number_format($alquileres->sum('sin_pagar'), 2, ',', '.') }}</span>
+        </div>
+        <table class="min-w-full divide-y divide-amber-100 text-sm">
+            <tbody class="divide-y divide-amber-100">
+                @foreach($alquileres as $equipo)
+                    <tr>
+                        <td class="px-5 py-2 text-gray-800 font-medium">{{ $equipo->etiqueta() }}</td>
+                        <td class="px-5 py-2 text-gray-600">{{ $equipo->propietario ?: 'Dueño sin cargar' }}</td>
+                        <td class="px-5 py-2 text-gray-500">{{ $equipo->viajes_sin_pagar }} viaje{{ $equipo->viajes_sin_pagar !== 1 ? 's' : '' }}</td>
+                        <td class="px-5 py-2 text-right font-medium text-amber-900 whitespace-nowrap">$ {{ number_format($equipo->sin_pagar, 2, ',', '.') }}</td>
+                        <td class="px-5 py-2 text-right">
+                            <a href="{{ route('equipos.pagos', $equipo) }}"
+                               class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-white transition whitespace-nowrap">
+                                Registrar pago
+                            </a>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+@endif
+
 {{-- Meses --}}
 @if($meses->isEmpty())
     <div class="bg-white rounded-lg shadow text-center py-12 text-gray-500">

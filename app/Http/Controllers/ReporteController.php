@@ -17,7 +17,7 @@ class ReporteController extends Controller
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
         $camionId = $request->get('camion_id');
 
-        $viajes = Viaje::with('cliente')->whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)
+        $viajes = Viaje::with('cliente', 'equipo')->whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)
             ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->orderByDesc('fecha')->get();
         $combustible = Combustible::whereBetween('fecha', [$desde, $hasta])
@@ -30,7 +30,10 @@ class ReporteController extends Controller
         $totalIngresos     = $viajes->sum('total');
         $totalCombustible  = $combustible->sum('total');
         $totalMantenimiento = $mantenimiento->sum('monto');
-        $totalGastos       = $totalCombustible + $totalMantenimiento;
+        // La parte del dueño del equipo alquilado es un costo del viaje: va
+        // por la fecha del viaje, se le haya pagado o no.
+        $totalAlquiler     = $viajes->sum('alquiler_monto');
+        $totalGastos       = $totalCombustible + $totalMantenimiento + $totalAlquiler;
         $resultado         = $totalIngresos - $totalGastos;
         $cantidadViajes    = $viajes->count();
         $litrosCargados    = $combustible->sum('litros');
@@ -48,11 +51,24 @@ class ReporteController extends Controller
             ->sortByDesc('total')
             ->values();
 
+        // Cuánto generó cada equipo alquilado y cuánto se llevó su dueño.
+        $porEquipo = $viajes->filter(fn ($viaje) => $viaje->alquiler_monto > 0)
+            ->groupBy('equipo_id')
+            ->map(fn ($grupo) => (object) [
+                'equipo'   => $grupo->first()->equipo,
+                'viajes'   => $grupo->count(),
+                'bruto'    => $grupo->sum('total'),
+                'alquiler' => $grupo->sum('alquiler_monto'),
+                'sinPagar' => $grupo->whereNull('alquiler_pagado_el')->sum('alquiler_monto'),
+            ])
+            ->sortByDesc('bruto')
+            ->values();
+
         $camiones = Camion::orderBy('patente')->get();
 
         return view('reportes.index', compact(
             'viajes', 'periodo', 'desde', 'hasta',
-            'totalIngresos', 'totalCombustible', 'totalMantenimiento',
+            'totalIngresos', 'totalCombustible', 'totalMantenimiento', 'totalAlquiler', 'porEquipo',
             'totalGastos', 'resultado', 'cantidadViajes', 'litrosCargados',
             'camiones', 'camionId', 'porCliente'
         ));
