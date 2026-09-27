@@ -101,7 +101,9 @@
                     <div class="min-w-0">
                         <p class="text-sm font-medium text-gray-800 truncate">{{ $viaje->ruta() }}</p>
                         <p class="text-xs text-gray-500">
-                            {{ $viaje->fecha->format('d/m/Y') }} · {{ $viaje->resumenCarga() }}
+                            {{ $viaje->fecha->format('d/m/Y') }}
+                            @if($viaje->nro_orden) · Orden {{ $viaje->nro_orden }} @endif
+                            · {{ $viaje->resumenCarga() }}
                         </p>
                     </div>
                     <div class="text-right flex-shrink-0">

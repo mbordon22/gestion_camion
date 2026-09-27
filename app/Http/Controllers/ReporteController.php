@@ -17,7 +17,7 @@ class ReporteController extends Controller
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
         $camionId = $request->get('camion_id');
 
-        $viajes = Viaje::whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)
+        $viajes = Viaje::with('cliente')->whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)
             ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->orderByDesc('fecha')->get();
         $combustible = Combustible::whereBetween('fecha', [$desde, $hasta])
@@ -35,13 +35,26 @@ class ReporteController extends Controller
         $cantidadViajes    = $viajes->count();
         $litrosCargados    = $combustible->sum('litros');
 
+        // Los gastos del camión no son de ningún cliente, así que por cliente
+        // se muestran sólo los ingresos y lo que falta cobrar.
+        $porCliente = $viajes->groupBy('cliente_id')
+            ->map(fn ($grupo) => (object) [
+                'cliente'   => $grupo->first()->cliente,
+                'viajes'    => $grupo->count(),
+                'total'     => $grupo->sum('total'),
+                'cobrado'   => $grupo->where('cobrado', true)->sum('total'),
+                'sinCobrar' => $grupo->where('cobrado', false)->sum('total'),
+            ])
+            ->sortByDesc('total')
+            ->values();
+
         $camiones = Camion::orderBy('patente')->get();
 
         return view('reportes.index', compact(
             'viajes', 'periodo', 'desde', 'hasta',
             'totalIngresos', 'totalCombustible', 'totalMantenimiento',
             'totalGastos', 'resultado', 'cantidadViajes', 'litrosCargados',
-            'camiones', 'camionId'
+            'camiones', 'camionId', 'porCliente'
         ));
     }
 

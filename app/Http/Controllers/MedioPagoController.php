@@ -7,6 +7,7 @@ use App\Models\Combustible;
 use App\Models\Mantenimiento;
 use App\Models\Prestamo;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class MedioPagoController extends Controller
 {
@@ -64,7 +65,8 @@ class MedioPagoController extends Controller
     {
         $validated = $request->validate([
             'nombre'          => 'required|string|max:100',
-            'tipo'            => 'required|in:efectivo,debito,transferencia,credito',
+            // Sale de MedioPago::$tipos para que no queden desfasados.
+            'tipo'            => ['required', Rule::in(array_keys(MedioPago::$tipos))],
             'dia_cierre'      => 'nullable|integer|min:1|max:31',
             'dia_vencimiento' => 'nullable|integer|min:1|max:31',
             'activo'          => 'nullable|boolean',

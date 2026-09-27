@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Nuevo Viaje')
+@php $repitiendo = isset($viaje); @endphp
+
+@section('title', $repitiendo ? 'Repetir Viaje' : 'Nuevo Viaje')
 
 @section('content')
 <div class="max-w-2xl mx-auto">
@@ -10,8 +12,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
-        <h1 class="text-2xl font-bold text-gray-800">Nuevo Viaje</h1>
+        <h1 class="text-2xl font-bold text-gray-800">{{ $repitiendo ? 'Repetir Viaje' : 'Nuevo Viaje' }}</h1>
     </div>
+
+    @if($repitiendo)
+        <div class="mb-5 rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            <p class="font-semibold">Ya vienen cargados el camión, el cliente, el chofer, la carga y la ruta{{ $viaje->destino ? ' a ' . $viaje->destino : '' }}.</p>
+            <p class="mt-1 text-blue-800">Falta lo que trae el ticket: el número de orden y el peso. Revisá que la fecha sea la correcta.</p>
+        </div>
+    @endif
 
     <div class="bg-white rounded-lg shadow p-6">
         <form method="POST" action="{{ route('viajes.store') }}">

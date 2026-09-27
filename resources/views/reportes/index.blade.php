@@ -103,6 +103,46 @@
     </div>
 </div>
 
+{{-- Ingresos por cliente --}}
+@if($porCliente->isNotEmpty())
+<div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
+        <h2 class="font-semibold text-gray-700">Por cliente</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Cliente</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Viajes</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Cobrado</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Sin cobrar</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach($porCliente as $fila)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-800">
+                            @if($fila->cliente)
+                                <a href="{{ route('viajes.index', ['cliente_id' => $fila->cliente->id, 'camion_id' => $camionId, 'periodo' => 'rango', 'desde' => $desde, 'hasta' => $hasta]) }}"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline">{{ $fila->cliente->nombre }}</a>
+                            @else
+                                <span class="text-gray-500">Sin cliente</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-right text-gray-700">{{ $fila->viajes }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($fila->total, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right text-green-700">$ {{ number_format($fila->cobrado, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right font-semibold {{ $fila->sinCobrar > 0 ? 'text-amber-700' : 'text-gray-400' }}">$ {{ number_format($fila->sinCobrar, 2, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 {{-- Tabla de viajes del período --}}
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="px-5 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
@@ -120,6 +160,8 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Cliente</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">N° orden</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Ruta</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Carga</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
@@ -129,6 +171,8 @@
                     @foreach($viajes as $viaje)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-gray-700">{{ $viaje->fecha->format('d/m/Y') }}</td>
+                            <td class="px-4 py-3 text-gray-700">{{ $viaje->cliente?->nombre ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-700">{{ $viaje->nro_orden ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $viaje->ruta() }}</td>
                             <td class="px-4 py-3 text-gray-700">{{ $viaje->resumenCarga() }}</td>
                             <td class="px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
@@ -137,7 +181,7 @@
                 </tbody>
                 <tfoot class="bg-gray-50 font-semibold">
                     <tr>
-                        <td colspan="3" class="px-4 py-3 text-right text-gray-700">Total ingresos:</td>
+                        <td colspan="5" class="px-4 py-3 text-right text-gray-700">Total ingresos:</td>
                         <td class="px-4 py-3 text-right text-green-700">$ {{ number_format($totalIngresos, 2, ',', '.') }}</td>
                     </tr>
                 </tfoot>

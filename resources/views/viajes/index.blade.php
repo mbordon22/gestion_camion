@@ -18,6 +18,36 @@
 {{-- Filtro de período --}}
 <div class="bg-white rounded-lg shadow p-4 mb-5">
     <form method="GET" action="{{ route('viajes.index') }}" class="flex flex-wrap gap-3 items-end">
+        @if($clientes->isNotEmpty())
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Cliente</label>
+                <select name="cliente_id" onchange="this.form.submit()"
+                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">Todos los clientes</option>
+                    @foreach($clientes as $cliente)
+                        <option value="{{ $cliente->id }}" {{ (string) $clienteId === (string) $cliente->id ? 'selected' : '' }}>
+                            {{ $cliente->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+
+        @if($choferes->isNotEmpty())
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Chofer</label>
+                <select name="chofer_id" onchange="this.form.submit()"
+                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">Todos los choferes</option>
+                    @foreach($choferes as $chofer)
+                        <option value="{{ $chofer->id }}" {{ (string) $choferId === (string) $chofer->id ? 'selected' : '' }}>
+                            {{ $chofer->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+
         @if($camiones->count() > 1)
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
@@ -104,8 +134,10 @@
         <table id="tabla-viajes" class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Camión</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Camión / Chofer</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Cliente</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">N° orden</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Ruta</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Carga</th>
                     <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
@@ -116,10 +148,17 @@
             <tbody class="divide-y divide-gray-100">
                 @foreach($viajes as $viaje)
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="px-4 py-3 text-gray-600">{{ $viaje->camion?->patente ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
+                            {{ $viaje->camion?->patente ?? '—' }}
+                            @if($viaje->chofer)
+                                <p class="text-xs text-gray-500">{{ $viaje->chofer->nombre }}</p>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $viaje->fecha->timestamp }}">
                             {{ $viaje->fecha->format('d/m/Y H:i') }}
                         </td>
+                        <td class="px-4 py-3 text-gray-700">{{ $viaje->cliente?->nombre ?? '—' }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $viaje->nro_orden }}">{{ $viaje->nro_orden ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $viaje->ruta() }}</td>
                         <td class="px-4 py-3 text-gray-700">{{ $viaje->resumenCarga() }}</td>
                         <td class="px-4 py-3 text-right font-semibold text-gray-900" data-order="{{ $viaje->total }}">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
@@ -138,6 +177,12 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex justify-center gap-2">
+                                {{-- Varios viajes por día con la misma ruta: sólo cambian la pesada y el peso. --}}
+                                <a href="{{ route('viajes.create', ['repetir' => $viaje->id]) }}"
+                                   title="Cargar otro viaje igual a éste"
+                                   class="text-gray-700 hover:text-gray-900 font-medium text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-100 transition">
+                                    Repetir
+                                </a>
                                 <a href="{{ route('viajes.edit', $viaje) }}"
                                    class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
                                     Editar
@@ -172,8 +217,8 @@ $(function () {
             $(row).removeClass('even:bg-gray-50 dark:even:bg-gray-900/50 odd:bg-white dark:odd:bg-gray-950');
         },
         columnDefs: [
-            { orderable: false, targets: [5, 6] },
-            { searchable: false, targets: [1, 4, 5, 6] },
+            { orderable: false, targets: [7, 8] },
+            { searchable: false, targets: [1, 6, 7, 8] },
         ],
         language: {
             decimal:        ',',

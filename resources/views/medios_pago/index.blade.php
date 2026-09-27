@@ -45,7 +45,11 @@
                             <td class="px-4 py-3 font-medium text-gray-800">{{ $medio->nombre }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    {{ $medio->tipo === 'credito' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700' }}">
+                                    @switch($medio->tipo)
+                                        @case('credito') bg-purple-100 text-purple-800 @break
+                                        @case('descuento') bg-amber-100 text-amber-800 @break
+                                        @default bg-gray-100 text-gray-700
+                                    @endswitch">
                                     {{ \App\Models\MedioPago::$tipos[$medio->tipo] ?? $medio->tipo }}
                                 </span>
                             </td>

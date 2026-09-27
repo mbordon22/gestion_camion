@@ -18,7 +18,7 @@
                     data-cierre="{{ $medio->dia_cierre }}"
                     data-venc="{{ $medio->dia_vencimiento }}"
                     {{ (string) old('medio_pago_id', $medioActual) === (string) $medio->id ? 'selected' : '' }}>
-                {{ $medio->nombre }}{{ $medio->tipo === 'credito' ? ' (crédito)' : '' }}
+                {{ $medio->nombre }}@switch($medio->tipo)@case('credito') (crédito)@break @case('descuento') (lo descuenta el cliente)@break @endswitch
             </option>
         @endforeach
     </select>
@@ -26,13 +26,21 @@
 </div>
 
 <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de pago</label>
-    <input type="date" name="fecha_vencimiento" id="fecha_vencimiento"
-           value="{{ old('fecha_vencimiento', $vencActual) }}"
-           class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400
-                  @error('fecha_vencimiento') border-red-400 @enderror">
-    <p class="text-xs text-gray-400 mt-1">Cuándo se paga este gasto. Si la tarjeta tiene cierre/vencimiento, se sugiere sola; si no, ponela vos.</p>
-    @error('fecha_vencimiento') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+    <div id="bloque-fecha-pago">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de pago</label>
+        <input type="date" name="fecha_vencimiento" id="fecha_vencimiento"
+               value="{{ old('fecha_vencimiento', $vencActual) }}"
+               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400
+                      @error('fecha_vencimiento') border-red-400 @enderror">
+        <p class="text-xs text-gray-400 mt-1">Cuándo se paga este gasto. Si la tarjeta tiene cierre/vencimiento, se sugiere sola; si no, ponela vos.</p>
+        @error('fecha_vencimiento') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+    </div>
+
+    {{-- Un gasto descontado no se paga nunca: no hay fecha de pago que poner. --}}
+    <p id="aviso-descuento" class="hidden rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        Este gasto no se paga: el cliente te lo descuenta de la factura. Suma como gasto en
+        los reportes, pero no aparece en Pagos.
+    </p>
 </div>
 
 <script>
@@ -66,10 +74,22 @@
         return fechaGasto;
     }
 
+    const bloqueFecha   = document.getElementById('bloque-fecha-pago');
+    const avisoDescuento = document.getElementById('aviso-descuento');
+
+    function aplicarDescuento(tipo) {
+        const esDescuento = tipo === 'descuento';
+        bloqueFecha.classList.toggle('hidden', esDescuento);
+        avisoDescuento.classList.toggle('hidden', ! esDescuento);
+    }
+
     function recalcular() {
-        if (editadoManual) return;
         const opt = selMedio.options[selMedio.selectedIndex];
-        const tipo   = opt ? opt.getAttribute('data-tipo') : null;
+        const tipoActual = opt ? opt.getAttribute('data-tipo') : null;
+        aplicarDescuento(tipoActual);
+
+        if (editadoManual) return;
+        const tipo   = tipoActual;
         const cierre = opt ? parseInt(opt.getAttribute('data-cierre'), 10) : null;
         const venc   = opt ? parseInt(opt.getAttribute('data-venc'), 10) : null;
         const sugerida = sugerirFechaPago(inpFecha.value, tipo, cierre, venc);
@@ -78,5 +98,8 @@
 
     selMedio.addEventListener('change', () => { editadoManual = false; recalcular(); });
     inpFecha.addEventListener('input', recalcular);
+
+    // Estado inicial: al editar un gasto ya descontado, el campo ya viene oculto.
+    aplicarDescuento(selMedio.options[selMedio.selectedIndex]?.getAttribute('data-tipo'));
 })();
 </script>

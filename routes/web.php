@@ -6,6 +6,10 @@ use App\Http\Controllers\ViajeController;
 use App\Http\Controllers\CombustibleController;
 use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\CamionController;
+use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\ChoferController;
+use App\Http\Controllers\DestinoController;
+use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\MedioPagoController;
 use App\Http\Controllers\PrestamoController;
@@ -24,6 +28,14 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('camiones', CamionController::class)->except(['show'])
         ->parameters(['camiones' => 'camion']);
+    Route::resource('clientes', ClienteController::class)->except(['show'])
+        ->parameters(['clientes' => 'cliente']);
+    Route::resource('choferes', ChoferController::class)->except(['show'])
+        ->parameters(['choferes' => 'chofer']);
+    Route::resource('destinos', DestinoController::class)->except(['show']);
+    Route::get('tarifas/sugerir', [TarifaController::class, 'sugerir'])->name('tarifas.sugerir');
+    Route::resource('tarifas', TarifaController::class)->except(['show']);
+    Route::get('viajes/buscar-orden', [ViajeController::class, 'buscarPorOrden'])->name('viajes.buscar-orden');
     Route::resource('viajes', ViajeController::class)->except(['show']);
     Route::patch('viajes/{viaje}/cobrado', [ViajeController::class, 'toggleCobrado'])->name('viajes.cobrado');
     Route::resource('combustible', CombustibleController::class)->except(['show']);

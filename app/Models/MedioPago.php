@@ -22,16 +22,28 @@ class MedioPago extends Model
         'created_at' => 'datetime',
     ];
 
+    /**
+     * 'descuento' es el gasto que no sale de tu bolsillo: el cliente te lo da
+     * y después te lo descuenta de la factura (el combustible del ingenio, por
+     * ejemplo). Cuesta plata igual —por eso es un gasto— pero nunca es un
+     * egreso de caja, así que queda fuera de la pantalla de Pagos.
+     */
     public static array $tipos = [
         'efectivo'      => 'Efectivo',
         'debito'        => 'Débito',
         'transferencia' => 'Transferencia',
         'credito'       => 'Crédito / Tarjeta',
+        'descuento'     => 'Lo descuenta el cliente',
     ];
 
     public function esCredito(): bool
     {
         return $this->tipo === 'credito';
+    }
+
+    public function esDescuento(): bool
+    {
+        return $this->tipo === 'descuento';
     }
 
     /**
