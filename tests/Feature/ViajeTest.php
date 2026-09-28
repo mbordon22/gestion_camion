@@ -31,6 +31,14 @@ class ViajeTest extends TestCase
         return Camion::create(['patente' => 'AB123CD', 'activo' => true]);
     }
 
+    /** La forma de cobro que el formulario trae marcada. */
+    private function modoPropuesto(string $html): ?string
+    {
+        preg_match('/name="modo_cobro" value="(\w+)"[^>]*\schecked/', $html, $coincidencia);
+
+        return $coincidencia[1] ?? null;
+    }
+
     public function test_el_listado_de_viajes_se_muestra(): void
     {
         $this->actingAs($this->usuario())
@@ -47,7 +55,7 @@ class ViajeTest extends TestCase
             ->get(route('viajes.create'))
             ->assertOk()
             ->assertSee('¿Cómo cobrás este viaje?', false)
-            ->assertSee('Monto fijo por el viaje')
+            ->assertSee('Precio cerrado')
             ->assertSee('Por cantidad')
             ->assertSee('Origen')
             ->assertSee('Km recorridos');
@@ -106,7 +114,7 @@ class ViajeTest extends TestCase
         $this->assertNull($viaje->unidad);
         $this->assertNull($viaje->precio_unitario);
         $this->assertSame('Tucumán → Salta', $viaje->ruta());
-        $this->assertSame('Monto fijo', $viaje->resumenCarga());
+        $this->assertSame('Precio cerrado', $viaje->resumenCarga());
     }
 
     public function test_el_monto_fijo_igual_guarda_la_carga_del_ticket(): void
@@ -175,7 +183,7 @@ class ViajeTest extends TestCase
         $this->assertSame(0, Viaje::count());
     }
 
-    public function test_el_formulario_sugiere_los_productos_ya_cargados(): void
+    public function test_el_formulario_sugiere_solo_los_productos_ya_cargados(): void
     {
         $camion = $this->camion();
         Viaje::create([
@@ -190,7 +198,162 @@ class ViajeTest extends TestCase
             ->get(route('viajes.create'))
             ->assertOk()
             ->assertSee('<option value="Cereal"></option>', false)
-            ->assertSee('<option value="Vinaza"></option>', false);
+            // Nada fijo de un rubro en particular: sólo lo que ya se llevó.
+            ->assertDontSee('<option value="Vinaza"></option>', false);
+    }
+
+    public function test_los_montos_se_pueden_escribir_con_puntos_y_coma(): void
+    {
+        $camion = $this->camion();
+
+        $this->actingAs($this->usuario())->post(route('viajes.store'), [
+            'camion_id'       => $camion->id,
+            'modo_cobro'      => 'cantidad',
+            'fecha'           => '2026-09-20',
+            'cantidad'        => '27,7',
+            'unidad'          => 'toneladas',
+            'precio_unitario' => '$ 8.500',
+        ])->assertRedirect(route('viajes.index'));
+
+        $viaje = Viaje::first();
+        $this->assertEquals(27.7, $viaje->cantidad);
+        $this->assertEquals(8500, $viaje->precio_unitario);
+        $this->assertEquals(235450, $viaje->total);
+
+        $this->actingAs($this->usuario())->post(route('viajes.store'), [
+            'camion_id'  => $camion->id,
+            'modo_cobro' => 'fijo',
+            'fecha'      => '2026-09-20',
+            'total'      => '1.250.000,50',
+        ])->assertRedirect(route('viajes.index'));
+
+        $this->assertEquals(1250000.50, Viaje::latest('id')->first()->total);
+    }
+
+    public function test_un_monto_que_no_se_entiende_se_rechaza(): void
+    {
+        $camion = $this->camion();
+
+        $this->actingAs($this->usuario())->post(route('viajes.store'), [
+            'camion_id'  => $camion->id,
+            'modo_cobro' => 'fijo',
+            'fecha'      => '2026-09-20',
+            'total'      => 'ciento cincuenta',
+        ])->assertSessionHasErrors('total');
+
+        $this->assertSame(0, Viaje::count());
+    }
+
+    public function test_la_fecha_va_sin_hora_y_la_hora_es_opcional(): void
+    {
+        $camion = $this->camion();
+        $datos = ['camion_id' => $camion->id, 'modo_cobro' => 'fijo', 'total' => 1000];
+
+        $this->actingAs($this->usuario())->post(route('viajes.store'), $datos + ['fecha' => '2026-09-20'])
+            ->assertRedirect(route('viajes.index'));
+        $this->actingAs($this->usuario())->post(route('viajes.store'), $datos + ['fecha' => '2026-09-21', 'hora' => '18:47'])
+            ->assertRedirect(route('viajes.index'));
+
+        [$sinHora, $conHora] = Viaje::orderBy('id')->get();
+        $this->assertSame('2026-09-20 00:00', $sinHora->fecha->format('Y-m-d H:i'));
+        $this->assertSame('2026-09-21 18:47', $conHora->fecha->format('Y-m-d H:i'));
+
+        // Al editarlo, la hora que tenía vuelve al formulario.
+        $this->actingAs($this->usuario())->get(route('viajes.edit', $conHora))
+            ->assertSee('value="2026-09-21"', false)
+            ->assertSee('value="18:47"', false);
+    }
+
+    public function test_sin_viajes_el_formulario_propone_un_precio_cerrado(): void
+    {
+        $this->camion();
+
+        $respuesta = $this->actingAs($this->usuario())->get(route('viajes.create'))->assertOk();
+
+        $this->assertSame('fijo', $this->modoPropuesto($respuesta->getContent()));
+        $respuesta->assertDontSee('¿Igual que el último viaje?');
+    }
+
+    public function test_a_cada_cliente_se_le_propone_cobrar_como_la_ultima_vez(): void
+    {
+        $camion = $this->camion();
+        $porTonelada = Cliente::create(['nombre' => 'Control Union', 'activo' => true]);
+        $cerrado = Cliente::create(['nombre' => 'Acopio Norte', 'activo' => true]);
+
+        Viaje::create([
+            'camion_id' => $camion->id, 'cliente_id' => $porTonelada->id, 'modo_cobro' => 'cantidad',
+            'fecha' => '2026-09-19', 'producto' => 'Vinaza', 'cantidad' => 27.7, 'unidad' => 'toneladas',
+            'precio_unitario' => 8500, 'total' => 235450,
+        ]);
+        $ultimo = Viaje::create([
+            'camion_id' => $camion->id, 'cliente_id' => $cerrado->id, 'modo_cobro' => 'fijo',
+            'fecha' => '2026-09-20', 'total' => 150000,
+        ]);
+
+        $respuesta = $this->actingAs($this->usuario())->get(route('viajes.create'))->assertOk();
+        $html = $respuesta->getContent();
+
+        // El último viaje fue para Acopio Norte, a precio cerrado: así arranca.
+        $this->assertSame('fijo', $this->modoPropuesto($html));
+        $respuesta->assertSee('¿Igual que el último viaje?')
+            ->assertSee(route('viajes.create', ['repetir' => $ultimo->id]), false);
+
+        // Y el formulario sabe cómo se le cobró a cada uno, para cuando se cambie.
+        $cobro = json_decode(html_entity_decode(
+            str($html)->after('data-cobro="')->before('"')->toString()
+        ), true);
+
+        $this->assertSame(['modo' => 'cantidad', 'unidad' => 'toneladas', 'producto' => 'Vinaza'], $cobro[$porTonelada->id]);
+        $this->assertSame('fijo', $cobro[$cerrado->id]['modo']);
+
+        // Si el último hubiera sido por tonelada, arrancaría por cantidad.
+        $ultimo->delete();
+        $html = $this->actingAs($this->usuario())->get(route('viajes.create'))->getContent();
+        $this->assertSame('cantidad', $this->modoPropuesto($html));
+    }
+
+    public function test_despues_de_guardar_se_ofrece_cargar_otro_igual(): void
+    {
+        $camion = $this->camion();
+
+        $this->actingAs($this->usuario())->followingRedirects()->post(route('viajes.store'), [
+            'camion_id'  => $camion->id,
+            'modo_cobro' => 'fijo',
+            'fecha'      => today()->toDateString(),
+            'total'      => 150000,
+        ])->assertSee('Cargar otro igual')
+            ->assertSee(route('viajes.create', ['repetir' => Viaje::first()->id]), false);
+    }
+
+    public function test_repetir_un_viaje_de_precio_cerrado_trae_el_precio(): void
+    {
+        $camion = $this->camion();
+        $original = Viaje::create([
+            'camion_id' => $camion->id, 'modo_cobro' => 'fijo', 'fecha' => '2026-09-20', 'total' => 150000,
+        ]);
+
+        $this->actingAs($this->usuario())->get(route('viajes.create', ['repetir' => $original->id]))
+            ->assertOk()
+            ->assertSee('value="150.000"', false);
+    }
+
+    public function test_lo_que_no_se_usa_queda_en_mas_datos(): void
+    {
+        $camion = $this->camion();
+
+        // Sin choferes ni viajes con orden, los dos van dentro de "Más datos".
+        $this->actingAs($this->usuario())->get(route('viajes.create'))
+            ->assertSeeInOrder(['<summary', 'name="nro_orden"', 'name="chofer_id"'], false);
+
+        Chofer::create(['nombre' => 'Rivadeneira', 'activo' => true]);
+        Viaje::create([
+            'camion_id' => $camion->id, 'modo_cobro' => 'fijo', 'fecha' => '2026-09-20',
+            'total' => 150000, 'nro_orden' => '10110',
+        ]);
+
+        // Una vez que se usan, quedan a la vista.
+        $this->actingAs($this->usuario())->get(route('viajes.create'))
+            ->assertSeeInOrder(['name="nro_orden"', 'name="chofer_id"', '<summary'], false);
     }
 
     public function test_el_total_por_cantidad_lo_calcula_el_servidor(): void

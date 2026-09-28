@@ -43,7 +43,7 @@ class Viaje extends Model
      *  - cantidad -> cantidad x precio_unitario
      */
     public static array $modosCobro = [
-        'fijo'     => 'Monto fijo por el viaje',
+        'fijo'     => 'Precio cerrado',
         'cantidad' => 'Por cantidad',
     ];
 
@@ -58,13 +58,11 @@ class Viaje extends Model
 
     /**
      * Sugerencias de producto para el formulario: lo que ya se cargó alguna
-     * vez, más los habituales, para no tipear "Vinaza" en cada viaje.
+     * vez, para no tipear lo mismo en cada viaje.
      */
     public static function productosSugeridos(): array
     {
         return static::query()->whereNotNull('producto')->distinct()->pluck('producto')
-            ->merge(['Vinaza', 'Azúcar'])
-            ->unique()
             ->sort(SORT_LOCALE_STRING)
             ->values()
             ->all();
@@ -120,7 +118,7 @@ class Viaje extends Model
 
     /**
      * Resumen de la carga para mostrar en una sola columna de los listados:
-     * "Vinaza · 27,7 toneladas", "800 bolsas" o "Monto fijo".
+     * "Vinaza · 27,7 toneladas", "800 bolsas" o "Precio cerrado".
      *
      * La cantidad ya no depende del modo de cobro: un flete de precio cerrado
      * igual llevó una carga y el peso del ticket tiene que quedar registrado.
@@ -131,20 +129,31 @@ class Viaje extends Model
             ? $this->cantidadFormateada() . ' ' . $this->unidadEtiqueta()
             : null;
 
-        return collect([$this->producto, $carga])->filter()->implode(' · ') ?: 'Monto fijo';
+        return collect([$this->producto, $carga])->filter()->implode(' · ') ?: 'Precio cerrado';
     }
 
     /** La cantidad sin decimales si es entera (800), con coma si no (28,5). */
     public function cantidadFormateada(): string
     {
-        $cantidad = (float) $this->cantidad;
+        return self::valorCampo($this->cantidad);
+    }
 
-        if (fmod($cantidad, 1) === 0.0) {
-            return number_format($cantidad, 0, ',', '.');
+    /**
+     * Un número en criollo, sin decimales si es entero: "235.450", "27,7"
+     * (28,50 -> "28,5"). Sirve también para los campos del formulario,
+     * porque el controlador lo sabe volver a leer.
+     */
+    public static function valorCampo($numero): string
+    {
+        if ($numero === null || $numero === '') {
+            return '';
         }
 
-        // 28,50 -> "28,5"; 28,05 se queda como está.
-        return rtrim(number_format($cantidad, 2, ',', '.'), '0');
+        $numero = (float) $numero;
+
+        return fmod($numero, 1) === 0.0
+            ? number_format($numero, 0, ',', '.')
+            : rtrim(number_format($numero, 2, ',', '.'), '0');
     }
 
     /** La etiqueta de la unidad, en minúscula, o el texto libre que se haya cargado. */

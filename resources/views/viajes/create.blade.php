@@ -20,6 +20,22 @@
             <p class="font-semibold">Ya vienen cargados el camión, el cliente, el chofer, la carga y la ruta{{ $viaje->destino ? ' a ' . $viaje->destino : '' }}.</p>
             <p class="mt-1 text-blue-800">Falta lo que trae el ticket: el número de orden y el peso. Revisá que la fecha sea la correcta.</p>
         </div>
+    @elseif($ultimo)
+        {{-- Quien hace siempre el mismo recorrido, carga el viaje de un toque. --}}
+        <a href="{{ route('viajes.create', ['repetir' => $ultimo->id]) }}"
+           class="mb-5 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-white px-4 py-3 shadow-sm hover:bg-blue-50 transition">
+            <span class="min-w-0">
+                <span class="block text-sm font-semibold text-gray-800">¿Igual que el último viaje?</span>
+                <span class="block text-xs text-gray-500 truncate">
+                    {{ collect([
+                        $ultimo->cliente?->nombre,
+                        $ultimo->ruta(),
+                        $ultimo->esMontoFijo() ? '$ ' . number_format($ultimo->total, 0, ',', '.') : $ultimo->resumenCarga(),
+                    ])->reject(fn ($parte) => blank($parte) || $parte === '—')->implode(' · ') }}
+                </span>
+            </span>
+            <span class="flex-shrink-0 text-sm font-medium text-blue-700">Repetir →</span>
+        </a>
     @endif
 
     <div class="bg-white rounded-lg shadow p-6">
@@ -27,13 +43,15 @@
             @csrf
             @include('viajes._form')
 
-            <div class="flex gap-3 pt-4">
+            {{-- En el celular el botón queda siempre a mano, pegado abajo. --}}
+            <div class="sticky bottom-0 -mx-6 mt-4 px-6 py-3 bg-white border-t border-gray-200 flex gap-3
+                        sm:static sm:mx-0 sm:px-0 sm:py-0 sm:pt-4 sm:border-0">
                 <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded shadow transition">
+                        class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded shadow transition">
                     Guardar viaje
                 </button>
                 <a href="{{ route('viajes.index') }}"
-                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-2 rounded transition">
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-2.5 rounded transition text-center">
                     Cancelar
                 </a>
             </div>

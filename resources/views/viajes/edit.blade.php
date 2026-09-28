@@ -19,13 +19,15 @@
             @method('PUT')
             @include('viajes._form')
 
-            <div class="flex gap-3 pt-4">
+            {{-- En el celular el botón queda siempre a mano, pegado abajo. --}}
+            <div class="sticky bottom-0 -mx-6 mt-4 px-6 py-3 bg-white border-t border-gray-200 flex gap-3
+                        sm:static sm:mx-0 sm:px-0 sm:py-0 sm:pt-4 sm:border-0">
                 <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded shadow transition">
+                        class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded shadow transition">
                     Actualizar viaje
                 </button>
                 <a href="{{ route('viajes.index') }}"
-                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-2 rounded transition">
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-2.5 rounded transition text-center">
                     Cancelar
                 </a>
             </div>

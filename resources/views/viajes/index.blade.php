@@ -6,13 +6,22 @@
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Viajes</h1>
-    <a href="{{ route('viajes.create') }}"
-       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded shadow transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Nuevo viaje
-    </a>
+    <div class="flex flex-wrap gap-2">
+        {{-- Recién guardado: lo más común es cargar otro igual. --}}
+        @if(session('viaje_guardado'))
+            <a href="{{ route('viajes.create', ['repetir' => session('viaje_guardado')]) }}"
+               class="inline-flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 font-medium px-4 py-2 rounded border border-blue-300 shadow-sm transition">
+                Cargar otro igual
+            </a>
+        @endif
+        <a href="{{ route('viajes.create') }}"
+           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded shadow transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nuevo viaje
+        </a>
+    </div>
 </div>
 
 {{-- Filtro de período --}}
@@ -174,7 +183,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $viaje->fecha->timestamp }}">
-                            {{ $viaje->fecha->format('d/m/Y H:i') }}
+                            {{ $viaje->fecha->format($viaje->fecha->format('H:i') === '00:00' ? 'd/m/Y' : 'd/m/Y H:i') }}
                         </td>
                         <td class="px-4 py-3 text-gray-700">{{ $viaje->cliente?->nombre ?? '—' }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $viaje->nro_orden }}">{{ $viaje->nro_orden ?? '—' }}</td>

@@ -194,12 +194,17 @@ class DestinoTest extends TestCase
 
     public function test_el_viaje_conserva_un_destino_que_no_esta_en_el_catalogo(): void
     {
-        $viaje = $this->viaje(['destino' => 'Un lugar viejo']);
+        $viaje = $this->viaje(['destino' => 'Un lugar viejo', 'origen' => 'Un campo', 'km_recorridos' => 45]);
 
+        // Lleva su origen y km, para que volver a elegirlo después de cambiar
+        // de destino los recupere en vez de dejarlos vacíos.
         $this->actingAs($this->usuario)
             ->get(route('viajes.edit', $viaje))
             ->assertOk()
-            ->assertSee('<option value="Un lugar viejo" selected>Un lugar viejo</option>', false);
+            ->assertSee('<option value="Un lugar viejo"
+                        data-km="45"
+                        data-origen="Un campo"
+                        selected>Un lugar viejo</option>', false);
     }
 
     public function test_la_migracion_junta_las_variantes_de_mayusculas(): void

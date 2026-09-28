@@ -72,25 +72,62 @@ class ViajeController extends Controller
         // está guardado se envía igual a store().
         $viaje = $this->viajeParaRepetir($request->integer('repetir'));
 
-        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
-        $clientes = $this->clientesParaFormulario($viaje);
-        $choferes = $this->choferesParaFormulario($viaje);
-        $destinos = $this->destinosParaFormulario($viaje);
-        $equipos = $this->equiposParaFormulario($viaje);
-        $productos = Viaje::productosSugeridos();
-
         // Casi siempre se trabaja para el mismo cliente, con el mismo chofer y
         // el mismo equipo enganchado: vienen elegidos los del último viaje. Al
         // repetir no hacen falta, porque ya vienen los del viaje que se repite.
-        $ultimo = Viaje::latest('id')->first(['cliente_id', 'chofer_id', 'equipo_id']);
+        $ultimo = Viaje::with('cliente')->latest('id')->first();
         $clienteSugerido = $ultimo?->cliente_id;
         $choferSugerido = $ultimo?->chofer_id;
         $equipoSugerido = $ultimo?->equipo_id;
 
-        return view('viajes.create', compact(
-            'viaje', 'camiones', 'clientes', 'clienteSugerido',
-            'choferes', 'choferSugerido', 'destinos', 'equipos', 'equipoSugerido', 'productos'
+        // Y se cobra como la última vez que se le hizo un viaje a ese cliente.
+        // Si todavía no hay viajes, lo más común: un precio cerrado.
+        $cobroPorCliente = $this->cobroPorCliente();
+        $cobroSugerido = $cobroPorCliente->get($clienteSugerido)
+            ?? ($ultimo ? $this->cobroDe($ultimo) : null);
+
+        return view('viajes.create', $this->datosFormulario($viaje) + compact(
+            'viaje', 'ultimo', 'clienteSugerido', 'choferSugerido', 'equipoSugerido',
+            'cobroPorCliente', 'cobroSugerido'
         ));
+    }
+
+    /** Lo que necesita el formulario, sea para cargar un viaje o para editarlo. */
+    private function datosFormulario(?Viaje $viaje): array
+    {
+        return [
+            'camiones'  => Camion::where('activo', true)->orderBy('patente')->get(),
+            'clientes'  => $this->clientesParaFormulario($viaje),
+            'choferes'  => $this->choferesParaFormulario($viaje),
+            'destinos'  => $this->destinosParaFormulario($viaje),
+            'equipos'   => $this->equiposParaFormulario($viaje),
+            'productos' => Viaje::productosSugeridos(),
+            // El N° de orden va a la vista sólo para quien ya lo usa; si no,
+            // queda en "Más datos".
+            'usaOrden'  => Viaje::whereNotNull('nro_orden')->exists(),
+        ];
+    }
+
+    /**
+     * Cómo se cobró el último viaje de cada cliente, para que el formulario
+     * lo proponga al elegirlo: a uno se le cobra por tonelada, a otro un
+     * precio cerrado.
+     */
+    private function cobroPorCliente()
+    {
+        $ultimos = Viaje::selectRaw('max(id)')->whereNotNull('cliente_id')->groupBy('cliente_id');
+
+        return Viaje::whereIn('id', $ultimos)->get()
+            ->mapWithKeys(fn (Viaje $viaje) => [$viaje->cliente_id => $this->cobroDe($viaje)]);
+    }
+
+    private function cobroDe(Viaje $viaje): array
+    {
+        return [
+            'modo'     => $viaje->modo_cobro,
+            'unidad'   => $viaje->unidad,
+            'producto' => $viaje->producto,
+        ];
     }
 
     /**
@@ -98,8 +135,8 @@ class ViajeController extends Controller
      *
      * Se copia lo que se repite viaje a viaje —camión, cliente, chofer, qué se
      * lleva, la ruta y el precio— y no se copia lo que trae el ticket de cada
-     * uno: el número de pesada, el peso y el total. La fecha es la de ahora, y
-     * el viaje arranca sin cobrar.
+     * uno: el número de pesada, el peso y el total que sale del peso. La
+     * fecha es la de hoy, y el viaje arranca sin cobrar.
      */
     private function viajeParaRepetir(?int $id): ?Viaje
     {
@@ -118,7 +155,12 @@ class ViajeController extends Controller
             'unidad', 'precio_unitario', 'origen', 'destino', 'km_recorridos',
         ]));
 
-        $repetido->fecha = now();
+        // Con precio cerrado, el precio del flete es el total mismo.
+        if ($original->esMontoFijo()) {
+            $repetido->total = $original->total;
+        }
+
+        $repetido->fecha = today();
         $repetido->cobrado = false;
 
         return $repetido;
@@ -126,21 +168,17 @@ class ViajeController extends Controller
 
     public function store(Request $request)
     {
-        Viaje::create($this->validar($request));
+        $viaje = Viaje::create($this->validar($request));
 
-        return redirect()->route('viajes.index')->with('success', 'Viaje registrado correctamente.');
+        // El listado ofrece cargar otro igual: es lo más común después de guardar.
+        return redirect()->route('viajes.index')
+            ->with('success', 'Viaje registrado correctamente.')
+            ->with('viaje_guardado', $viaje->id);
     }
 
     public function edit(Viaje $viaje)
     {
-        $camiones = Camion::where('activo', true)->orderBy('patente')->get();
-        $clientes = $this->clientesParaFormulario($viaje);
-        $choferes = $this->choferesParaFormulario($viaje);
-        $destinos = $this->destinosParaFormulario($viaje);
-        $equipos = $this->equiposParaFormulario($viaje);
-        $productos = Viaje::productosSugeridos();
-
-        return view('viajes.edit', compact('viaje', 'camiones', 'clientes', 'choferes', 'destinos', 'equipos', 'productos'));
+        return view('viajes.edit', $this->datosFormulario($viaje) + compact('viaje'));
     }
 
     public function update(Request $request, Viaje $viaje)
@@ -223,6 +261,11 @@ class ViajeController extends Controller
         $choferNuevo  = $request->input('chofer_id') === self::NUEVO;
         $destinoNuevo = $request->input('destino') === self::DESTINO_NUEVO;
 
+        // Los montos llegan como los escribe cualquiera: "150.000", "27,7".
+        foreach (['cantidad', 'precio_unitario', 'total'] as $campo) {
+            $request->merge([$campo => $this->numero($request->input($campo))]);
+        }
+
         $validated = $request->validate([
             'camion_id'       => 'required|exists:camiones,id',
             'cliente_id'      => $clienteNuevo ? 'nullable' : 'nullable|exists:clientes,id',
@@ -232,6 +275,7 @@ class ViajeController extends Controller
             'equipo_id'       => 'nullable|exists:equipos,id',
             'modo_cobro'      => 'required|in:fijo,cantidad',
             'fecha'           => 'required|date',
+            'hora'            => 'nullable|date_format:H:i',
             'fecha_carga'     => 'nullable|date',
             'nro_orden'       => 'nullable|string|max:30',
             'producto'        => 'nullable|string|max:60',
@@ -246,6 +290,11 @@ class ViajeController extends Controller
             'km_recorridos'   => 'nullable|integer|min:0',
             'observaciones'   => 'nullable|string|max:500',
         ]);
+
+        // El formulario pide sólo el día; la hora es opcional y va aparte.
+        if (! empty($validated['hora'])) {
+            $validated['fecha'] = Carbon::parse($validated['fecha'])->setTimeFromTimeString($validated['hora']);
+        }
 
         if ($validated['modo_cobro'] === 'fijo') {
             // El precio por unidad sí depende del modo: con monto fijo no existe.
@@ -313,9 +362,41 @@ class ViajeController extends Controller
             );
         }
 
-        unset($validated['cliente_nuevo'], $validated['chofer_nuevo'], $validated['destino_nuevo']);
+        unset($validated['cliente_nuevo'], $validated['chofer_nuevo'], $validated['destino_nuevo'], $validated['hora']);
 
         return $validated;
+    }
+
+    /**
+     * Un número escrito a mano, pasado a lo que entiende la validación.
+     *
+     * Con coma se lee en criollo: la coma es el decimal y los puntos separan
+     * los miles ("1.500,50"). Sin coma, el punto es decimal ("27.7"), salvo
+     * que agrupe de a tres cifras ("150.000"), que es como se escribe un
+     * monto redondo. Lo que no se pueda leer se deja como vino, para que la
+     * validación lo rechace.
+     */
+    private function numero(mixed $valor): mixed
+    {
+        if (! is_string($valor)) {
+            return $valor;
+        }
+
+        $texto = str_replace(['$', ' '], '', trim($valor));
+
+        if ($texto === '') {
+            return null;
+        }
+
+        if (str_contains($texto, ',')) {
+            return str_replace(['.', ','], ['', '.'], $texto);
+        }
+
+        if (preg_match('/^\d{1,3}(\.\d{3})+$/', $texto)) {
+            return str_replace('.', '', $texto);
+        }
+
+        return $texto;
     }
 
     /** Los clientes activos, más el del viaje que se edita aunque ya no lo esté. */
