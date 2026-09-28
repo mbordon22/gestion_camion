@@ -599,6 +599,51 @@ class ViajeTest extends TestCase
             ->assertSee('Repetir');
     }
 
+    public function test_en_el_celular_los_viajes_van_agrupados_por_dia(): void
+    {
+        $camion = $this->camion();
+        $viaje = $this->viajeDeVinaza($camion);
+
+        // El día con su total; cada viaje con destino, peso y orden, que abre
+        // Editar; la pastilla de cobrado y "+ Otro viaje igual" al pie del día.
+        $this->actingAs($this->usuario())
+            ->get(route('viajes.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['20/09', '1 viaje', '$ 235.450,00'], false)
+            ->assertSee('Churqui · 27,7 t')
+            ->assertSee('18:47 · EFASS Servicios · #00137965')
+            ->assertSee('data-href="' . route('viajes.edit', $viaje) . '"', false)
+            ->assertSee('data-cobrado-de="' . $viaje->id . '"', false)
+            ->assertSee(route('viajes.create', ['repetir' => $viaje->id]), false)
+            ->assertSee('+ Otro viaje igual');
+    }
+
+    public function test_editar_ofrece_repetir_y_eliminar_con_confirmacion(): void
+    {
+        $viaje = $this->viajeDeVinaza($this->camion());
+
+        // En el celular el listado no tiene esos botones: están acá.
+        $this->actingAs($this->usuario())
+            ->get(route('viajes.edit', $viaje))
+            ->assertOk()
+            ->assertSee(route('viajes.create', ['repetir' => $viaje->id]), false)
+            ->assertSee('data-confirmar="¿Eliminar este viaje?"', false)
+            ->assertSee('20/09/2026 · EFASS Servicios · $ 235.450,00. No se puede deshacer.', false)
+            ->assertSee('Eliminar este viaje');
+    }
+
+    public function test_ninguna_pantalla_usa_el_confirm_del_navegador(): void
+    {
+        // Todas las confirmaciones van por el modal (data-confirmar en el layout).
+        $conConfirm = collect(\Illuminate\Support\Facades\File::allFiles(resource_path('views')))
+            ->filter(fn ($archivo) => str_contains($archivo->getContents(), 'return confirm('))
+            ->map(fn ($archivo) => $archivo->getRelativePathname())
+            ->values()
+            ->all();
+
+        $this->assertSame([], $conConfirm);
+    }
+
     public function test_se_puede_marcar_un_viaje_como_cobrado(): void
     {
         $camion = $this->camion();

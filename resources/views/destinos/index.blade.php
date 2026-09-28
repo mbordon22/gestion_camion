@@ -27,7 +27,7 @@
     </div>
 @endif
 
-<div class="bg-white rounded-lg shadow overflow-hidden">
+<div class="lista-tarjetas bg-white rounded-lg shadow overflow-hidden">
     @if($destinos->isEmpty())
         <div class="text-center py-12 text-gray-500">
             <p>No hay destinos cargados.</p>
@@ -35,7 +35,7 @@
         </div>
     @else
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Destino</th>
@@ -49,38 +49,41 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($destinos as $destino)
-                        <tr class="hover:bg-gray-50 transition {{ $destino->activo ? '' : 'opacity-50' }}">
-                            <td class="px-4 py-3 font-medium text-gray-800">
+                        <tr class="t-compacta hover:bg-gray-50 transition {{ $destino->activo ? '' : 'opacity-50' }}" data-href="{{ route('destinos.edit', $destino) }}">
+                            <td class="t-titulo px-4 py-3 font-medium text-gray-800">
                                 {{ $destino->nombre }}
                                 @if($destino->notas)
                                     <p class="text-xs font-normal text-gray-500 truncate max-w-xs" title="{{ $destino->notas }}">{{ $destino->notas }}</p>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-gray-700">{{ $destino->cliente?->nombre ?? 'Cualquiera' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $destino->origen ?? '—' }}</td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap font-medium {{ $destino->km === null ? 'text-amber-700' : 'text-gray-800' }}">
+                            <td class="t-dato px-4 py-3 text-gray-700">
+                                <span class="hidden sm:inline">{{ $destino->cliente?->nombre ?? 'Cualquiera' }}</span>
+                                <span class="sm:hidden">{{ $destino->cliente?->nombre ?? 'Cualquier cliente' }}</span>
+                            </td>
+                            <td class="t-dato {{ $destino->origen ? '' : 't-ocultar' }} px-4 py-3 text-gray-600"><span class="sm:hidden">desde</span> {{ $destino->origen ?? '—' }}</td>
+                            <td class="t-monto px-4 py-3 text-right whitespace-nowrap font-medium {{ $destino->km === null ? 'text-amber-700' : 'text-gray-800' }}">
                                 {{ $destino->kmFormateado() }}
                             </td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $destino->viajes_count }}</td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="t-dato px-4 py-3 text-right text-gray-700">{{ $destino->viajes_count }}<span class="sm:hidden"> viaje{{ $destino->viajes_count === 1 ? '' : 's' }}</span></td>
+                            <td class="t-dato {{ $destino->activo ? 't-ocultar' : '' }} px-4 py-3 text-center">
                                 @if($destino->activo)
                                     <span class="inline-flex px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">Activo</span>
                                 @else
                                     <span class="inline-flex px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">Inactivo</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="t-acciones px-4 py-3 text-center">
                                 <div class="flex justify-center gap-2">
                                     <a href="{{ route('destinos.edit', $destino) }}"
-                                       class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+                                       class="hidden sm:inline-block text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
                                         Editar
                                     </a>
                                     <form method="POST" action="{{ route('destinos.destroy', $destino) }}"
-                                          onsubmit="return confirm('¿Eliminar este destino? Los viajes ya cargados no se tocan.')">
+                                          data-confirmar="¿Eliminar este destino?" data-confirmar-detalle="Los viajes ya cargados no se tocan.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                                class="text-red-600 hover:text-red-800 font-medium text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-red-200 hover:bg-red-50 transition">
                                             Eliminar
                                         </button>
                                     </form>

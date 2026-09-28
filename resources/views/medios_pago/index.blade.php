@@ -21,14 +21,14 @@
     </a>
 </div>
 
-<div class="bg-white rounded-lg shadow overflow-hidden">
+<div class="lista-tarjetas bg-white rounded-lg shadow overflow-hidden">
     @if($medios->isEmpty())
         <div class="text-center py-12 text-gray-500">
             <p>No hay medios de pago cargados.</p>
         </div>
     @else
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Nombre</th>
@@ -41,9 +41,9 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($medios as $medio)
-                        <tr class="hover:bg-gray-50 transition {{ $medio->activo ? '' : 'opacity-50' }}">
-                            <td class="px-4 py-3 font-medium text-gray-800">{{ $medio->nombre }}</td>
-                            <td class="px-4 py-3">
+                        <tr class="t-compacta hover:bg-gray-50 transition {{ $medio->activo ? '' : 'opacity-50' }}" data-href="{{ route('medios-pago.edit', $medio) }}">
+                            <td class="t-titulo px-4 py-3 font-medium text-gray-800">{{ $medio->nombre }}</td>
+                            <td class="t-dato px-4 py-3">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                     @switch($medio->tipo)
                                         @case('credito') bg-purple-100 text-purple-800 @break
@@ -53,27 +53,27 @@
                                     {{ \App\Models\MedioPago::$tipos[$medio->tipo] ?? $medio->tipo }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $medio->dia_cierre ?? '—' }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $medio->dia_vencimiento ?? '—' }}</td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="t-dato {{ $medio->dia_cierre ? '' : 't-ocultar' }} px-4 py-3 text-right text-gray-700"><span class="sm:hidden">cierra el</span> {{ $medio->dia_cierre ?? '—' }}</td>
+                            <td class="t-dato {{ $medio->dia_vencimiento ? '' : 't-ocultar' }} px-4 py-3 text-right text-gray-700"><span class="sm:hidden">vence el</span> {{ $medio->dia_vencimiento ?? '—' }}</td>
+                            <td class="t-dato {{ $medio->activo ? 't-ocultar' : '' }} px-4 py-3 text-center">
                                 @if($medio->activo)
                                     <span class="inline-flex px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">Activo</span>
                                 @else
                                     <span class="inline-flex px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">Inactivo</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="t-acciones px-4 py-3 text-center">
                                 <div class="flex justify-center gap-2">
                                     <a href="{{ route('medios-pago.edit', $medio) }}"
-                                       class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+                                       class="hidden sm:inline-block text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
                                         Editar
                                     </a>
                                     <form method="POST" action="{{ route('medios-pago.destroy', $medio) }}"
-                                          onsubmit="return confirm('¿Eliminar este medio de pago? Si está en uso se desactivará.')">
+                                          data-confirmar="¿Eliminar este medio de pago?" data-confirmar-detalle="Si ya se usó en algún gasto, se desactiva en lugar de borrarse.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                                class="text-red-600 hover:text-red-800 font-medium text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-red-200 hover:bg-red-50 transition">
                                             Eliminar
                                         </button>
                                     </form>

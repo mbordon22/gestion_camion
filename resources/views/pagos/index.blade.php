@@ -32,15 +32,15 @@
             <h2 class="font-semibold text-amber-900">Alquiler de equipos sin pagar</h2>
             <span class="font-bold text-amber-900">$ {{ number_format($alquileres->sum('sin_pagar'), 2, ',', '.') }}</span>
         </div>
-        <table class="min-w-full divide-y divide-amber-100 text-sm">
+        <table class="tabla-tarjetas min-w-full divide-y divide-amber-100 text-sm">
             <tbody class="divide-y divide-amber-100">
                 @foreach($alquileres as $equipo)
-                    <tr>
-                        <td class="px-5 py-2 text-gray-800 font-medium">{{ $equipo->etiqueta() }}</td>
-                        <td class="px-5 py-2 text-gray-600">{{ $equipo->propietario ?: 'Dueño sin cargar' }}</td>
-                        <td class="px-5 py-2 text-gray-500">{{ $equipo->viajes_sin_pagar }} viaje{{ $equipo->viajes_sin_pagar !== 1 ? 's' : '' }}</td>
-                        <td class="px-5 py-2 text-right font-medium text-amber-900 whitespace-nowrap">$ {{ number_format($equipo->sin_pagar, 2, ',', '.') }}</td>
-                        <td class="px-5 py-2 text-right">
+                    <tr class="t-compacta">
+                        <td class="t-titulo px-5 py-2 text-gray-800 font-medium">{{ $equipo->etiqueta() }}</td>
+                        <td class="t-dato px-5 py-2 text-gray-600">{{ $equipo->propietario ?: 'Dueño sin cargar' }}</td>
+                        <td class="t-dato px-5 py-2 text-gray-500">{{ $equipo->viajes_sin_pagar }} viaje{{ $equipo->viajes_sin_pagar !== 1 ? 's' : '' }}</td>
+                        <td class="t-monto px-5 py-2 text-right font-medium text-amber-900 whitespace-nowrap">$ {{ number_format($equipo->sin_pagar, 2, ',', '.') }}</td>
+                        <td class="t-acciones px-5 py-2 text-right">
                             <a href="{{ route('equipos.pagos', $equipo) }}"
                                class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-white transition whitespace-nowrap">
                                 Registrar pago
@@ -60,12 +60,12 @@
             <h2 class="font-semibold text-purple-900">Choferes sin liquidar</h2>
             <span class="font-bold text-purple-900">$ {{ number_format($choferes->sum('saldo'), 2, ',', '.') }}</span>
         </div>
-        <table class="min-w-full divide-y divide-purple-100 text-sm">
+        <table class="tabla-tarjetas min-w-full divide-y divide-purple-100 text-sm">
             <tbody class="divide-y divide-purple-100">
                 @foreach($choferes as $chofer)
-                    <tr>
-                        <td class="px-5 py-2 text-gray-800 font-medium">{{ $chofer->nombre }}</td>
-                        <td class="px-5 py-2 text-gray-500">
+                    <tr class="t-compacta">
+                        <td class="t-titulo px-5 py-2 text-gray-800 font-medium">{{ $chofer->nombre }}</td>
+                        <td class="t-dato px-5 py-2 text-gray-500">
                             {{ $chofer->viajes_sin_liquidar }} viaje{{ $chofer->viajes_sin_liquidar !== 1 ? 's' : '' }}
                             @if($chofer->adelantos > 0)
                                 · adelantos −$ {{ number_format($chofer->adelantos, 0, ',', '.') }}
@@ -74,10 +74,10 @@
                                 · gastos +$ {{ number_format($chofer->gastos, 0, ',', '.') }}
                             @endif
                         </td>
-                        <td class="px-5 py-2 text-right font-medium whitespace-nowrap {{ $chofer->saldo >= 0 ? 'text-purple-900' : 'text-red-700' }}">
+                        <td class="t-monto px-5 py-2 text-right font-medium whitespace-nowrap {{ $chofer->saldo >= 0 ? 'text-purple-900' : 'text-red-700' }}">
                             {{ $chofer->saldo < 0 ? '−' : '' }}$ {{ number_format(abs($chofer->saldo), 2, ',', '.') }}
                         </td>
-                        <td class="px-5 py-2 text-right">
+                        <td class="t-acciones px-5 py-2 text-right">
                             <a href="{{ route('choferes.liquidacion', $chofer) }}"
                                class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-white transition whitespace-nowrap">
                                 Liquidar
@@ -104,16 +104,16 @@
                     <h2 class="font-semibold text-gray-700 capitalize flex items-center gap-2">
                         {{ $mes['label'] }}
                         @if($mes['esActual'])
-                            <span class="text-xs font-normal bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">este mes</span>
+                            <span class="normal-case text-xs font-normal bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">este mes</span>
                         @elseif($mes['esProximo'])
-                            <span class="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">mes que viene</span>
+                            <span class="normal-case text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">mes que viene</span>
                         @endif
                     </h2>
                     <span class="font-bold text-gray-800">$ {{ number_format($mes['total'], 2, ',', '.') }}</span>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-5 py-2 text-left font-semibold text-gray-600">Fecha</th>
@@ -126,15 +126,18 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach($mes['items'] as $item)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-5 py-2 whitespace-nowrap text-gray-700">{{ $item['fecha']->format('d/m/Y') }}</td>
-                                    <td class="px-5 py-2 text-gray-700">{{ $item['detalle'] }}</td>
-                                    <td class="px-5 py-2">
+                                    <td class="t-pre px-5 py-2 whitespace-nowrap text-gray-700">
+                                        <span class="hidden sm:inline">{{ $item['fecha']->format('d/m/Y') }}</span>
+                                        <span class="sm:hidden">{{ $item['fecha']->format('d/m') }}</span>
+                                    </td>
+                                    <td class="t-titulo px-5 py-2 text-gray-700">{{ $item['detalle'] }}</td>
+                                    <td class="t-dato px-5 py-2">
                                         <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                             {{ $item['origen'] }}
                                         </span>
                                     </td>
-                                    <td class="px-5 py-2 text-gray-500">{{ $item['medio'] }}</td>
-                                    <td class="px-5 py-2 text-right font-medium text-gray-900">$ {{ number_format($item['monto'], 2, ',', '.') }}</td>
+                                    <td class="t-dato px-5 py-2 text-gray-500">{{ $item['medio'] }}</td>
+                                    <td class="t-monto px-5 py-2 text-right font-medium text-gray-900">$ {{ number_format($item['monto'], 2, ',', '.') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

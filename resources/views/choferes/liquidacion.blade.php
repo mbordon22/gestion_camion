@@ -132,7 +132,7 @@
 
                 @if($viajes->isNotEmpty())
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-center w-10">
@@ -150,18 +150,21 @@
                             <tbody class="divide-y divide-gray-100">
                                 @foreach($viajes as $viaje)
                                     <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-2 text-center">
+                                        <td class="t-marca px-4 py-2 text-center">
                                             <input type="checkbox" name="viajes[]" value="{{ $viaje->id }}" checked
                                                    data-grupo="viaje" data-fecha="{{ $viaje->fecha->toDateString() }}"
                                                    data-monto="{{ $viaje->comision_monto }}"
                                                    class="item-liquidacion rounded border-gray-300 text-blue-600 focus:ring-blue-400">
                                         </td>
-                                        <td class="px-4 py-2 text-gray-700 whitespace-nowrap">{{ $viaje->fecha->format('d/m/Y') }}</td>
-                                        <td class="px-4 py-2 text-gray-700">{{ $viaje->nro_orden ?? '—' }}</td>
-                                        <td class="px-4 py-2 text-gray-700">{{ $viaje->cliente?->nombre ?? '—' }}</td>
-                                        <td class="px-4 py-2 text-gray-600">{{ $viaje->ruta() }}</td>
-                                        <td class="px-4 py-2 text-right text-gray-700 whitespace-nowrap">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
-                                        <td class="px-4 py-2 text-right font-semibold text-gray-900 whitespace-nowrap">
+                                        <td class="t-pre px-4 py-2 text-gray-700 whitespace-nowrap">
+                                            <span class="hidden sm:inline">{{ $viaje->fecha->format('d/m/Y') }}</span>
+                                            <span class="sm:hidden">{{ $viaje->fecha->format('d/m') }}</span>
+                                        </td>
+                                        <td class="t-dato {{ $viaje->nro_orden ? '' : 't-ocultar' }} px-4 py-2 text-gray-700"><span class="sm:hidden">Orden</span> {{ $viaje->nro_orden ?? '—' }}</td>
+                                        <td class="t-titulo px-4 py-2 text-gray-700">{{ $viaje->cliente?->nombre ?? 'Sin cliente' }}</td>
+                                        <td class="t-linea {{ $viaje->ruta() === '—' ? 't-ocultar' : '' }} px-4 py-2 text-gray-600">{{ $viaje->ruta() }}</td>
+                                        <td class="t-dato px-4 py-2 text-right text-gray-700 whitespace-nowrap"><span class="sm:hidden">viaje de</span> $ {{ number_format($viaje->total, 2, ',', '.') }}</td>
+                                        <td class="t-monto px-4 py-2 text-right font-semibold text-gray-900 whitespace-nowrap">
                                             $ {{ number_format($viaje->comision_monto, 2, ',', '.') }}
                                             @if($viaje->comision_porcentaje !== null)
                                                 <span class="text-xs font-normal text-gray-500">({{ \App\Models\Equipo::porcentajeFormateado($viaje->comision_porcentaje) }}%)</span>
@@ -176,7 +179,7 @@
 
                 @if($movimientos->isNotEmpty())
                     <div class="overflow-x-auto {{ $viajes->isNotEmpty() ? 'border-t-4 border-gray-100' : '' }}">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-center w-10">
@@ -191,28 +194,31 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @foreach($movimientos as $movimiento)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-2 text-center">
+                                    <tr class="t-compacta hover:bg-gray-50">
+                                        <td class="t-marca px-4 py-2 text-center">
                                             <input type="checkbox" name="movimientos[]" value="{{ $movimiento->id }}" checked
                                                    data-grupo="movimiento" data-fecha="{{ $movimiento->fecha->toDateString() }}"
                                                    data-monto="{{ $movimiento->montoConSigno() }}"
                                                    class="item-liquidacion rounded border-gray-300 text-blue-600 focus:ring-blue-400">
                                         </td>
-                                        <td class="px-4 py-2 text-gray-700 whitespace-nowrap">{{ $movimiento->fecha->format('d/m/Y') }}</td>
-                                        <td class="px-4 py-2 text-gray-700">
+                                        <td class="t-pre px-4 py-2 text-gray-700 whitespace-nowrap">
+                                            <span class="hidden sm:inline">{{ $movimiento->fecha->format('d/m/Y') }}</span>
+                                            <span class="sm:hidden">{{ $movimiento->fecha->format('d/m') }}</span>
+                                        </td>
+                                        <td class="t-titulo px-4 py-2 text-gray-700">
                                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
                                                          {{ $movimiento->esAdelanto() ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700' }}">
                                                 {{ $movimiento->esAdelanto() ? 'Adelanto' : 'Gasto' }}
                                             </span>
                                             {{ $movimiento->concepto }}
                                         </td>
-                                        <td class="px-4 py-2 text-right font-semibold whitespace-nowrap {{ $movimiento->esAdelanto() ? 'text-red-700' : 'text-green-700' }}">
+                                        <td class="t-monto px-4 py-2 text-right font-semibold whitespace-nowrap {{ $movimiento->esAdelanto() ? 'text-red-700' : 'text-green-700' }}">
                                             {{ $movimiento->esAdelanto() ? '−' : '+' }}$ {{ number_format($movimiento->monto, 2, ',', '.') }}
                                         </td>
-                                        <td class="px-4 py-2 text-right">
+                                        <td class="t-acciones px-4 py-2 text-right">
                                             {{-- El formulario de borrar va afuera: no se pueden anidar formularios. --}}
                                             <button type="submit" form="borrar-movimiento-{{ $movimiento->id }}"
-                                                    class="text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                                    class="text-red-600 hover:text-red-800 text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-red-200 hover:bg-red-50 transition">
                                                 Borrar
                                             </button>
                                         </td>
@@ -271,7 +277,7 @@
 
             @foreach($movimientos as $movimiento)
                 <form method="POST" action="{{ route('choferes.movimientos.destroy', $movimiento) }}" id="borrar-movimiento-{{ $movimiento->id }}"
-                      onsubmit="return confirm('¿Borrar este {{ $movimiento->esAdelanto() ? 'adelanto' : 'gasto' }}?')" class="hidden">
+                      data-confirmar="¿Borrar este {{ $movimiento->esAdelanto() ? 'adelanto' : 'gasto' }}?" data-confirmar-detalle="{{ collect([$movimiento->fecha?->format('d/m/Y'), '$ ' . number_format($movimiento->monto, 2, ',', '.'), $movimiento->concepto])->filter()->implode(' · ') }}" data-confirmar-boton="Sí, borrar" class="hidden">
                     @csrf
                     @method('DELETE')
                 </form>
@@ -289,7 +295,7 @@
             <div class="text-center py-10 text-gray-500 text-sm">Todavía no le liquidaste nada.</div>
         @else
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold text-gray-600">Pagado el</th>
@@ -303,9 +309,9 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach($liquidaciones as $liquidacion)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{ $liquidacion->fecha->format('d/m/Y') }}</td>
-                                <td class="px-4 py-3 text-gray-600">
+                            <tr class="hover:bg-gray-50" data-href="{{ route('liquidaciones.show', $liquidacion) }}">
+                                <td class="t-titulo px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{ $liquidacion->fecha->format('d/m/Y') }}</td>
+                                <td class="t-linea px-4 py-3 text-gray-600">
                                     @if($liquidacion->viajes_count > 0)
                                         {{ $liquidacion->viajes_count }} viaje{{ $liquidacion->viajes_count !== 1 ? 's' : '' }}
                                         · del {{ \Carbon\Carbon::parse($liquidacion->viajes_min_fecha)->format('d/m') }}
@@ -314,15 +320,15 @@
                                         Sin viajes
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-right text-gray-700 whitespace-nowrap">$ {{ number_format($liquidacion->comisiones, 2, ',', '.') }}</td>
-                                <td class="px-4 py-3 text-right whitespace-nowrap {{ $liquidacion->adelantos > 0 ? 'text-red-700' : 'text-gray-400' }}">
-                                    {{ $liquidacion->adelantos > 0 ? '−$ ' . number_format($liquidacion->adelantos, 2, ',', '.') : '—' }}
+                                <td class="t-dato px-4 py-3 text-right text-gray-700 whitespace-nowrap"><span class="sm:hidden">comisiones</span> $ {{ number_format($liquidacion->comisiones, 2, ',', '.') }}</td>
+                                <td class="t-dato {{ $liquidacion->adelantos > 0 ? '' : 't-ocultar' }} px-4 py-3 text-right whitespace-nowrap {{ $liquidacion->adelantos > 0 ? 'text-red-700' : 'text-gray-400' }}">
+                                    <span class="sm:hidden">adelantos</span> {{ $liquidacion->adelantos > 0 ? '−$ ' . number_format($liquidacion->adelantos, 2, ',', '.') : '—' }}
                                 </td>
-                                <td class="px-4 py-3 text-right whitespace-nowrap {{ $liquidacion->gastos > 0 ? 'text-green-700' : 'text-gray-400' }}">
-                                    {{ $liquidacion->gastos > 0 ? '+$ ' . number_format($liquidacion->gastos, 2, ',', '.') : '—' }}
+                                <td class="t-dato {{ $liquidacion->gastos > 0 ? '' : 't-ocultar' }} px-4 py-3 text-right whitespace-nowrap {{ $liquidacion->gastos > 0 ? 'text-green-700' : 'text-gray-400' }}">
+                                    <span class="sm:hidden">gastos</span> {{ $liquidacion->gastos > 0 ? '+$ ' . number_format($liquidacion->gastos, 2, ',', '.') : '—' }}
                                 </td>
-                                <td class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">$ {{ number_format($liquidacion->total, 2, ',', '.') }}</td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="t-monto px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">$ {{ number_format($liquidacion->total, 2, ',', '.') }}</td>
+                                <td class="t-ocultar px-4 py-3 text-right">
                                     <a href="{{ route('liquidaciones.show', $liquidacion) }}"
                                        class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition whitespace-nowrap">
                                         Ver detalle

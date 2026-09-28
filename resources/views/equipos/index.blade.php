@@ -17,7 +17,7 @@
     </a>
 </div>
 
-<div class="bg-white rounded-lg shadow overflow-hidden">
+<div class="lista-tarjetas bg-white rounded-lg shadow overflow-hidden">
     @if($equipos->isEmpty())
         <div class="text-center py-12 text-gray-500">
             <p>No hay equipos cargados.</p>
@@ -25,7 +25,7 @@
         </div>
     @else
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Equipo</th>
@@ -39,54 +39,54 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($equipos as $equipo)
-                        <tr class="hover:bg-gray-50 transition {{ $equipo->activo ? '' : 'opacity-50' }}">
-                            <td class="px-4 py-3 font-medium text-gray-800">
+                        <tr class="hover:bg-gray-50 transition {{ $equipo->activo ? '' : 'opacity-50' }}" data-href="{{ route('equipos.edit', $equipo) }}">
+                            <td class="t-titulo px-4 py-3 font-medium text-gray-800">
                                 {{ $equipo->etiqueta() }}
                                 @if($equipo->tipo)
                                     <p class="text-xs font-normal text-gray-500">{{ $equipo->tipo }}</p>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $equipo->camion?->patente ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-700">
+                            <td class="t-dato {{ $equipo->camion ? '' : 't-ocultar' }} px-4 py-3 text-gray-700 whitespace-nowrap">{{ $equipo->camion?->patente ?? '—' }}</td>
+                            <td class="t-dato px-4 py-3 text-gray-700">
                                 {{ $equipo->condicion() }}
                                 @if($equipo->alquilado)
-                                    <p class="text-xs text-gray-500">Dueño: {{ $equipo->propietario ?: 'sin cargar' }}</p>
+                                    <span class="sm:block text-xs text-gray-500"><span class="sm:hidden">·</span> Dueño: {{ $equipo->propietario ?: 'sin cargar' }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $equipo->viajes_count }}</td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                            <td class="t-dato px-4 py-3 text-right text-gray-700">{{ $equipo->viajes_count }}<span class="sm:hidden"> viaje{{ $equipo->viajes_count === 1 ? '' : 's' }}</span></td>
+                            <td class="t-monto {{ $equipo->sin_pagar > 0 ? '' : 't-ocultar' }} px-4 py-3 text-right whitespace-nowrap">
                                 @if($equipo->sin_pagar > 0)
                                     <span class="font-semibold text-amber-700">$ {{ number_format($equipo->sin_pagar, 2, ',', '.') }}</span>
-                                    <p class="text-xs text-gray-500">{{ $equipo->viajes_sin_pagar }} viaje{{ $equipo->viajes_sin_pagar !== 1 ? 's' : '' }}</p>
+                                    <p class="text-xs font-normal text-gray-500">{{ $equipo->viajes_sin_pagar }} viaje{{ $equipo->viajes_sin_pagar !== 1 ? 's' : '' }}<span class="sm:hidden"> sin pagar</span></p>
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="t-dato {{ $equipo->activo ? 't-ocultar' : '' }} px-4 py-3 text-center">
                                 @if($equipo->activo)
                                     <span class="inline-flex px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">Activo</span>
                                 @else
                                     <span class="inline-flex px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">Inactivo</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="t-acciones px-4 py-3 text-center">
                                 <div class="flex justify-center gap-2">
                                     @if($equipo->alquilado || $equipo->sin_pagar > 0)
                                         <a href="{{ route('equipos.pagos', $equipo) }}"
-                                           class="text-gray-700 hover:text-gray-900 font-medium text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-100 transition whitespace-nowrap">
+                                           class="text-gray-700 hover:text-gray-900 font-medium text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-gray-300 hover:bg-gray-100 transition whitespace-nowrap">
                                             Pagos al dueño
                                         </a>
                                     @endif
                                     <a href="{{ route('equipos.edit', $equipo) }}"
-                                       class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+                                       class="hidden sm:inline-block text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
                                         Editar
                                     </a>
                                     <form method="POST" action="{{ route('equipos.destroy', $equipo) }}"
-                                          onsubmit="return confirm('¿Eliminar este equipo? Si tiene viajes cargados se desactivará.')">
+                                          data-confirmar="¿Eliminar este equipo?" data-confirmar-detalle="Si tiene viajes cargados, se desactiva en lugar de borrarse.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                                class="text-red-600 hover:text-red-800 font-medium text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-red-200 hover:bg-red-50 transition">
                                             Eliminar
                                         </button>
                                     </form>

@@ -24,14 +24,22 @@
     </div>
 </div>
 
-{{-- Filtro de período --}}
-<div class="bg-white rounded-lg shadow p-4 mb-5">
-    <form method="GET" action="{{ route('viajes.index') }}" class="flex flex-wrap gap-3 items-end">
+{{-- Filtros. En el celular, plegados con lo elegido a la vista. --}}
+@php
+    $resumenFiltros = collect([
+        $clientes->firstWhere('id', $clienteId)?->nombre,
+        $choferes->firstWhere('id', $choferId)?->nombre,
+        $camiones->firstWhere('id', $camionId)?->nombre(),
+        \Carbon\Carbon::parse($desde)->format('d/m') . ' al ' . \Carbon\Carbon::parse($hasta)->format('d/m'),
+    ])->filter()->implode(' · ');
+@endphp
+<x-filtros :resumen="$resumenFiltros">
+    <form method="GET" action="{{ route('viajes.index') }}" class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end">
         @if($clientes->isNotEmpty())
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Cliente</label>
                 <select name="cliente_id" onchange="this.form.submit()"
-                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        class="w-full sm:w-auto border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                     <option value="">Todos los clientes</option>
                     @foreach($clientes as $cliente)
                         <option value="{{ $cliente->id }}" {{ (string) $clienteId === (string) $cliente->id ? 'selected' : '' }}>
@@ -46,7 +54,7 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Chofer</label>
                 <select name="chofer_id" onchange="this.form.submit()"
-                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        class="w-full sm:w-auto border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                     <option value="">Todos los choferes</option>
                     @foreach($choferes as $chofer)
                         <option value="{{ $chofer->id }}" {{ (string) $choferId === (string) $chofer->id ? 'selected' : '' }}>
@@ -61,7 +69,7 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Camión</label>
                 <select name="camion_id" onchange="this.form.submit()"
-                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        class="w-full sm:w-auto border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                     <option value="">Todos los camiones</option>
                     @foreach($camiones as $camion)
                         <option value="{{ $camion->id }}" {{ (string) $camionId === (string) $camion->id ? 'selected' : '' }}>
@@ -75,7 +83,7 @@
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Período</label>
             <select name="periodo" onchange="this.form.submit()"
-                    class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    class="w-full sm:w-auto border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                 <option value="hoy"    {{ $periodo === 'hoy'    ? 'selected' : '' }}>Hoy</option>
                 <option value="semana" {{ $periodo === 'semana' ? 'selected' : '' }}>Esta semana</option>
                 <option value="mes"    {{ $periodo === 'mes'    ? 'selected' : '' }}>Este mes</option>
@@ -87,26 +95,26 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Desde</label>
                 <input type="date" name="desde" value="{{ $desde }}"
-                       class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                       class="w-full sm:w-auto border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Hasta</label>
                 <input type="date" name="hasta" value="{{ $hasta }}"
-                       class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                       class="w-full sm:w-auto border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
             </div>
             <button type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
+                    class="col-span-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
                 Filtrar
             </button>
         @endif
     </form>
-</div>
+</x-filtros>
 
 {{-- Resumen del período --}}
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-5">
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
         <p class="text-xs text-blue-600 font-medium uppercase tracking-wide">Viajes en período</p>
-        <p class="text-3xl font-bold text-blue-800 mt-1">{{ $cantidadViajes }}</p>
+        <p class="text-2xl sm:text-3xl font-bold text-blue-800 mt-1">{{ $cantidadViajes }}</p>
         <div class="mt-2 flex flex-wrap gap-2 text-xs">
             <span id="bd-cant-cobrados" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
                 {{ $cantidadCobrados }} cobrados
@@ -116,48 +124,137 @@
             </span>
         </div>
     </div>
-    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+    <div class="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
         <p class="text-xs text-green-600 font-medium uppercase tracking-wide">Total del período</p>
-        <p class="text-2xl font-bold text-green-800 mt-1">$ {{ number_format($totalPeriodo, 2, ',', '.') }}</p>
+        <p class="text-lg sm:text-2xl font-bold text-green-800 mt-1 whitespace-nowrap">$ {{ number_format($totalPeriodo, 2, ',', '.') }}</p>
         <div class="mt-2 space-y-0.5 text-xs">
             <p class="flex justify-between text-green-700">
-                <span>Cobrado:</span>
-                <span id="bd-total-cobrado" class="font-semibold">$ {{ number_format($totalCobrado, 2, ',', '.') }}</span>
+                <span>Cobrado</span>
+                <span id="bd-total-cobrado" class="font-semibold whitespace-nowrap">$ {{ number_format($totalCobrado, 2, ',', '.') }}</span>
             </p>
             <p class="flex justify-between text-gray-600">
-                <span>Sin cobrar:</span>
-                <span id="bd-total-no-cobrado" class="font-semibold">$ {{ number_format($totalNoCobrado, 2, ',', '.') }}</span>
+                <span>Sin cobrar</span>
+                <span id="bd-total-no-cobrado" class="font-semibold whitespace-nowrap">$ {{ number_format($totalNoCobrado, 2, ',', '.') }}</span>
             </p>
             @if($totalAlquiler > 0 || $totalComision > 0)
                 <div class="pt-1 mt-1 border-t border-green-200"></div>
                 @if($totalAlquiler > 0)
                     <p class="flex justify-between text-amber-700">
-                        <span>Para el dueño del equipo:</span>
-                        <span class="font-semibold">−$ {{ number_format($totalAlquiler, 2, ',', '.') }}</span>
+                        <span><span class="sm:hidden">Equipo</span><span class="hidden sm:inline">Para el dueño del equipo:</span></span>
+                        <span class="font-semibold whitespace-nowrap">−$ {{ number_format($totalAlquiler, 2, ',', '.') }}</span>
                     </p>
                 @endif
                 @if($totalComision > 0)
                     <p class="flex justify-between text-purple-700">
-                        <span>Para el chofer:</span>
-                        <span class="font-semibold">−$ {{ number_format($totalComision, 2, ',', '.') }}</span>
+                        <span><span class="sm:hidden">Chofer</span><span class="hidden sm:inline">Para el chofer:</span></span>
+                        <span class="font-semibold whitespace-nowrap">−$ {{ number_format($totalComision, 2, ',', '.') }}</span>
                     </p>
                 @endif
                 <p class="flex justify-between text-green-800">
-                    <span>Te queda:</span>
-                    <span class="font-semibold">$ {{ number_format($totalPeriodo - $totalAlquiler - $totalComision, 2, ',', '.') }}</span>
+                    <span>Te queda</span>
+                    <span class="font-semibold whitespace-nowrap">$ {{ number_format($totalPeriodo - $totalAlquiler - $totalComision, 2, ',', '.') }}</span>
                 </p>
             @endif
         </div>
     </div>
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center">
+    <div class="hidden sm:flex bg-gray-50 border border-gray-200 rounded-lg p-4 items-center">
         <p class="text-sm text-gray-600">
             {{ \Carbon\Carbon::parse($desde)->format('d/m/Y') }} — {{ \Carbon\Carbon::parse($hasta)->format('d/m/Y') }}
         </p>
     </div>
 </div>
 
-{{-- Tabla --}}
-<div class="bg-white rounded-lg shadow overflow-hidden">
+{{--
+    En el celular, los viajes agrupados por día: casi siempre son varios al
+    día y a la misma ruta, así que el día lleva la fecha, el total y lo que
+    queda, y cada viaje sólo lo que lo distingue (destino, peso, orden). Tocar
+    un viaje abre Editar; la pastilla marca si se cobró. Repetir y Eliminar
+    están en Editar, y "+ Otro viaje igual" repite el último del día.
+--}}
+@php
+    $porDia = $viajes->groupBy(fn ($viaje) => $viaje->fecha->toDateString());
+@endphp
+<div class="sm:hidden">
+    @if($viajes->isEmpty())
+        <div class="bg-white rounded-lg shadow text-center py-10 text-sm text-gray-500">No hay viajes en este período.</div>
+    @else
+        <div class="relative mb-4">
+            <input type="search" id="buscar-viajes" placeholder="Buscar cliente, destino, orden…" autocomplete="off"
+                   class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <div class="space-y-5">
+            @foreach($porDia as $dia => $delDia)
+                @php
+                    $fecha = \Carbon\Carbon::parse($dia);
+                    $etiquetaDia = $fecha->isToday() ? 'Hoy' : ($fecha->isYesterday() ? 'Ayer' : ucfirst($fecha->translatedFormat('l')));
+                    $totalDia = $delDia->sum('total');
+                    $netoDia = $delDia->sum(fn ($viaje) => $viaje->netoCamion());
+                @endphp
+                <section class="dia-viajes" aria-label="{{ $etiquetaDia }} {{ $fecha->format('d/m') }}">
+                    <div class="flex items-baseline justify-between px-1 mb-1.5">
+                        <h2 class="text-xs font-bold uppercase tracking-wide text-gray-700">{{ $etiquetaDia }} {{ $fecha->format('d/m') }}</h2>
+                        <p class="text-xs text-gray-500">
+                            {{ $delDia->count() }} viaje{{ $delDia->count() === 1 ? '' : 's' }} ·
+                            <span class="font-bold text-gray-900">$ {{ number_format($totalDia, 2, ',', '.') }}</span>
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100">
+                        @foreach($delDia as $viaje)
+                            @php
+                                $titulo = collect([$viaje->destino ?: $viaje->origen, $viaje->cargaCorta() ?? $viaje->producto])
+                                    ->filter()->implode(' · ');
+                                // Sin destino ni carga, el título es el cliente: no se repite abajo.
+                                $clienteEnTitulo = $titulo === '';
+                                $titulo = $titulo ?: ($viaje->cliente?->nombre ?? 'Viaje');
+                                $detalle = collect([
+                                    $viaje->fecha->format('H:i') !== '00:00' ? $viaje->fecha->format('H:i') : null,
+                                    $clienteEnTitulo ? null : $viaje->cliente?->nombre,
+                                    $viaje->nro_orden ? '#' . $viaje->nro_orden : null,
+                                ])->filter()->implode(' · ');
+                            @endphp
+                            <div class="viaje-movil flex items-start justify-between gap-3 px-3.5 py-3 cursor-pointer active:bg-gray-50"
+                                 data-href="{{ route('viajes.edit', $viaje) }}">
+                                <div class="min-w-0">
+                                    <a href="{{ route('viajes.edit', $viaje) }}" class="block text-[15px] font-semibold text-gray-900">{{ $titulo }}</a>
+                                    @if($detalle !== '')
+                                        <p class="text-xs text-gray-500 mt-0.5">{{ $detalle }}</p>
+                                    @endif
+                                </div>
+                                <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                                    <span class="text-[15px] font-bold text-gray-900 whitespace-nowrap">$ {{ number_format($viaje->total, 2, ',', '.') }}</span>
+                                    <button type="button" class="pastilla-cobrado text-[11px] font-semibold rounded-full px-2 py-0.5"
+                                            data-url="{{ route('viajes.cobrado', $viaje) }}"
+                                            data-cobrado-de="{{ $viaje->id }}"
+                                            data-cobrado="{{ $viaje->cobrado ? 1 : 0 }}"
+                                            aria-pressed="{{ $viaje->cobrado ? 'true' : 'false' }}">
+                                        {{ $viaje->cobrado ? 'Cobrado' : 'Sin cobrar' }}
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+
+                        <div class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-gray-50">
+                            @if($netoDia < $totalDia)
+                                <span class="text-xs text-emerald-700">Te quedan $ {{ number_format($netoDia, 2, ',', '.') }}</span>
+                            @else
+                                <span></span>
+                            @endif
+                            <a href="{{ route('viajes.create', ['repetir' => $delDia->first()->id]) }}"
+                               class="text-sm font-semibold text-blue-600 hover:text-blue-800">+ Otro viaje igual</a>
+                        </div>
+                    </div>
+                </section>
+            @endforeach
+        </div>
+
+        <p id="buscar-sin-resultados" class="hidden bg-white rounded-lg shadow text-center py-8 text-sm text-gray-500">No se encontraron viajes.</p>
+    @endif
+</div>
+
+{{-- En la computadora, la tabla de siempre. --}}
+<div class="hidden sm:block bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table id="tabla-viajes" class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
@@ -206,7 +303,8 @@
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer toggle-cobrado"
                                        data-url="{{ route('viajes.cobrado', $viaje) }}"
-                                       data-total="{{ $viaje->total }}"
+                                       data-cobrado-de="{{ $viaje->id }}"
+                                       aria-label="Cobrado"
                                        {{ $viaje->cobrado ? 'checked' : '' }}>
                                 <span class="relative w-10 h-5 bg-gray-300 rounded-full transition-colors
                                              peer-checked:bg-green-500
@@ -228,7 +326,8 @@
                                     Editar
                                 </a>
                                 <form method="POST" action="{{ route('viajes.destroy', $viaje) }}"
-                                      onsubmit="return confirm('¿Eliminar este viaje?')">
+                                      data-confirmar="¿Eliminar este viaje?"
+                                      data-confirmar-detalle="{{ $viaje->resumenParaConfirmar() }}">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
@@ -290,6 +389,7 @@ $(function () {
         totC: {{ (float) $totalCobrado }},
         totN: {{ (float) $totalNoCobrado }},
     };
+    const totales = @json($viajes->pluck('total', 'id')->map(fn ($total) => (float) $total));
     const meta = document.querySelector('meta[name="csrf-token"]');
     const token = meta ? meta.getAttribute('content') : '';
     const nf = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -301,36 +401,94 @@ $(function () {
         document.getElementById('bd-total-no-cobrado').textContent = '$ ' + nf.format(bd.totN);
     }
 
-    document.querySelectorAll('.toggle-cobrado').forEach(function (chk) {
-        chk.addEventListener('change', function () {
-            const prev = !chk.checked; // estado antes del clic
-            chk.disabled = true;
+    // La pastilla del celular: verde si se cobró, ámbar si no.
+    const CLASES_COBRADO = ['bg-green-100', 'text-green-800'];
+    const CLASES_SIN_COBRAR = ['bg-amber-100', 'text-amber-800'];
 
-            fetch(chk.dataset.url, {
-                method: 'PATCH',
-                headers: {
-                    'X-CSRF-TOKEN': token,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            })
-            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-            .then(function (data) {
-                chk.checked = data.cobrado;
-                const total = (typeof data.total === 'number') ? data.total : (parseFloat(chk.dataset.total) || 0);
+    function pintarPastilla(pastilla, cobrado) {
+        pastilla.dataset.cobrado = cobrado ? '1' : '0';
+        pastilla.setAttribute('aria-pressed', cobrado ? 'true' : 'false');
+        pastilla.textContent = cobrado ? 'Cobrado' : 'Sin cobrar';
+        pastilla.classList.remove(...CLASES_COBRADO, ...CLASES_SIN_COBRAR);
+        pastilla.classList.add(...(cobrado ? CLASES_COBRADO : CLASES_SIN_COBRAR));
+    }
+
+    // Un mismo viaje está en la tabla y en la lista del celular: se muestran igual.
+    function mostrarCobrado(id, cobrado) {
+        document.querySelectorAll('[data-cobrado-de="' + id + '"]').forEach(function (el) {
+            if (el.type === 'checkbox') {
+                el.checked = cobrado;
+            } else {
+                pintarPastilla(el, cobrado);
+            }
+        });
+    }
+
+    function alternarCobrado(el, id, estabaCobrado) {
+        el.disabled = true;
+
+        fetch(el.dataset.url, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (data) {
+            const total = (typeof data.total === 'number') ? data.total : (totales[id] || 0);
+            if (data.cobrado !== estabaCobrado) {
                 if (data.cobrado) {
                     bd.cantC++; bd.cantN--; bd.totC += total; bd.totN -= total;
                 } else {
                     bd.cantC--; bd.cantN++; bd.totC -= total; bd.totN += total;
                 }
-                render();
-            })
-            .catch(function () {
-                chk.checked = prev; // revertir el switch
-                alert('No se pudo actualizar el estado de cobro. Probá de nuevo.');
-            })
-            .finally(function () { chk.disabled = false; });
+            }
+            mostrarCobrado(id, data.cobrado);
+            render();
+        })
+        .catch(function () {
+            mostrarCobrado(id, estabaCobrado); // vuelve a como estaba
+            const mensaje = 'No se pudo actualizar el estado de cobro. Probá de nuevo.';
+            window.Swal ? Swal.fire({ icon: 'error', text: mensaje, confirmButtonColor: '#2563eb' }) : alert(mensaje);
+        })
+        .finally(function () { el.disabled = false; });
+    }
+
+    document.querySelectorAll('.toggle-cobrado').forEach(function (chk) {
+        chk.addEventListener('change', function () {
+            alternarCobrado(chk, chk.dataset.cobradoDe, ! chk.checked);
         });
+    });
+
+    document.querySelectorAll('.pastilla-cobrado').forEach(function (pastilla) {
+        pintarPastilla(pastilla, pastilla.dataset.cobrado === '1');
+        pastilla.addEventListener('click', function () {
+            alternarCobrado(pastilla, pastilla.dataset.cobradoDe, pastilla.dataset.cobrado === '1');
+        });
+    });
+
+    // Buscador del celular: filtra los viajes y esconde los días que quedan vacíos.
+    const buscador = document.getElementById('buscar-viajes');
+    const sinResultados = document.getElementById('buscar-sin-resultados');
+
+    buscador?.addEventListener('input', function () {
+        const texto = buscador.value.trim().toLowerCase();
+        let visibles = 0;
+
+        document.querySelectorAll('.dia-viajes').forEach(function (dia) {
+            let delDia = 0;
+            dia.querySelectorAll('.viaje-movil').forEach(function (viaje) {
+                const coincide = texto === '' || viaje.textContent.toLowerCase().includes(texto);
+                viaje.classList.toggle('hidden', ! coincide);
+                if (coincide) delDia++;
+            });
+            dia.classList.toggle('hidden', delDia === 0);
+            visibles += delDia;
+        });
+
+        sinResultados.classList.toggle('hidden', visibles > 0);
     });
 })();
 </script>

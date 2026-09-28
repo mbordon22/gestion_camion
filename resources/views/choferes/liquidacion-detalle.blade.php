@@ -65,7 +65,7 @@
                 Mandar por WhatsApp
             </a>
             <form method="POST" action="{{ route('liquidaciones.destroy', $liquidacion) }}"
-                  onsubmit="return confirm('¿Deshacer esta liquidación? Sus viajes, adelantos y gastos vuelven a figurar como pendientes.')">
+                  data-confirmar="¿Deshacer esta liquidación?" data-confirmar-detalle="Sus viajes, adelantos y gastos vuelven a figurar como pendientes." data-confirmar-boton="Sí, deshacer">
                 @csrf
                 @method('DELETE')
                 <button type="submit"
@@ -99,7 +99,7 @@
         @if($viajes->isNotEmpty())
             <h2 class="font-semibold text-gray-700 mb-2">Viajes</h2>
             <div class="overflow-x-auto mb-6">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-3 py-2 text-left font-semibold text-gray-600">Fecha</th>
@@ -113,12 +113,12 @@
                     <tbody class="divide-y divide-gray-100">
                         @foreach($viajes as $viaje)
                             <tr>
-                                <td class="px-3 py-1.5 text-gray-700 whitespace-nowrap">{{ $viaje->fecha->format('d/m/Y') }}</td>
-                                <td class="px-3 py-1.5 text-gray-700">{{ $viaje->nro_orden ?? '—' }}</td>
-                                <td class="px-3 py-1.5 text-gray-600">{{ $viaje->ruta() }}</td>
-                                <td class="px-3 py-1.5 text-gray-600">{{ $viaje->resumenCarga() }}</td>
-                                <td class="px-3 py-1.5 text-right text-gray-700 whitespace-nowrap">{{ $pesos($viaje->total) }}</td>
-                                <td class="px-3 py-1.5 text-right font-medium text-gray-900 whitespace-nowrap">
+                                <td class="t-titulo px-3 py-1.5 text-gray-700 whitespace-nowrap">{{ $viaje->fecha->format('d/m/Y') }}</td>
+                                <td class="t-dato {{ $viaje->nro_orden ? '' : 't-ocultar' }} px-3 py-1.5 text-gray-700"><span class="sm:hidden">Orden</span> {{ $viaje->nro_orden ?? '—' }}</td>
+                                <td class="t-linea {{ $viaje->ruta() === '—' ? 't-ocultar' : '' }} px-3 py-1.5 text-gray-600">{{ $viaje->ruta() }}</td>
+                                <td class="t-linea px-3 py-1.5 text-gray-600">{{ $viaje->resumenCarga() }}</td>
+                                <td class="t-dato px-3 py-1.5 text-right text-gray-700 whitespace-nowrap"><span class="sm:hidden">viaje de</span> {{ $pesos($viaje->total) }}</td>
+                                <td class="t-monto px-3 py-1.5 text-right font-medium text-gray-900 whitespace-nowrap">
                                     {{ $pesos($viaje->comision_monto) }}
                                     @if($viaje->comision_porcentaje !== null)
                                         <span class="text-xs font-normal text-gray-500">({{ \App\Models\Equipo::porcentajeFormateado($viaje->comision_porcentaje) }}%)</span>
@@ -133,15 +133,15 @@
 
         @if($movimientos->isNotEmpty())
             <h2 class="font-semibold text-gray-700 mb-2">Adelantos y gastos</h2>
-            <table class="min-w-full divide-y divide-gray-200 text-sm mb-6">
+            <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm mb-6">
                 <tbody class="divide-y divide-gray-100">
                     @foreach($movimientos as $movimiento)
                         <tr>
-                            <td class="px-3 py-1.5 text-gray-700 whitespace-nowrap w-28">{{ $movimiento->fecha->format('d/m/Y') }}</td>
-                            <td class="px-3 py-1.5 text-gray-700">
+                            <td class="t-pre px-3 py-1.5 text-gray-700 whitespace-nowrap w-28">{{ $movimiento->fecha->format('d/m/Y') }}</td>
+                            <td class="t-titulo px-3 py-1.5 text-gray-700">
                                 {{ $movimiento->esAdelanto() ? 'Adelanto' : 'Gasto que pagó él' }}{{ $movimiento->concepto ? ' · ' . $movimiento->concepto : '' }}
                             </td>
-                            <td class="px-3 py-1.5 text-right font-medium whitespace-nowrap {{ $movimiento->esAdelanto() ? 'text-red-700' : 'text-green-700' }}">
+                            <td class="t-monto px-3 py-1.5 text-right font-medium whitespace-nowrap {{ $movimiento->esAdelanto() ? 'text-red-700' : 'text-green-700' }}">
                                 {{ $movimiento->esAdelanto() ? '−' : '+' }}{{ $pesos($movimiento->monto) }}
                             </td>
                         </tr>

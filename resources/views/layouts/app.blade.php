@@ -61,6 +61,113 @@
             opacity: 0.4;
             cursor: not-allowed;
         }
+
+        /*
+         * Listados en el celular: cada fila de una tabla .tabla-tarjetas se
+         * muestra como una tarjeta, sin scroll de costado. Cada celda dice con
+         * una clase qué lugar ocupa:
+         *   t-marca     el tilde para elegir la fila, a la izquierda de todo
+         *   t-pre       dato corto antes del título (la fecha)
+         *   t-titulo    lo principal (el cliente, el nombre)
+         *   t-monto     el número, a la derecha del título
+         *   t-linea     un renglón entero (la ruta)
+         *   t-dato      datos chicos, uno al lado del otro, separados por " · "
+         *   t-pie       abajo a la izquierda (el switch de cobrado)
+         *   t-acciones  abajo a la derecha (los botones)
+         *   t-ocultar   no se muestra en el celular
+         * En la computadora sigue siendo una tabla común.
+         */
+        @media (max-width: 639.98px) {
+            table.tabla-tarjetas,
+            table.tabla-tarjetas tbody { display: block; width: 100% !important; }
+            table.tabla-tarjetas thead,
+            table.tabla-tarjetas tfoot .t-ocultar { display: none; }
+
+            /*
+             * Tarjetas separadas y con sombra, para ver dónde termina una y
+             * empieza la otra. Dentro de una sección con título van sobre un
+             * fondo gris; en un listado suelto (contenedor .lista-tarjetas),
+             * directamente sobre el fondo de la página.
+             */
+            table.tabla-tarjetas tbody {
+                display: flex; flex-direction: column; gap: 0.75rem;
+                padding: 0.75rem; background-color: #f3f4f6;
+            }
+            table.tabla-tarjetas tbody tr {
+                background-color: #fff;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 0.75rem;
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+            }
+            /* Sólo si tiene la tabla: vacío, el aviso de "no hay…" conserva su caja blanca. */
+            .lista-tarjetas:has(table.tabla-tarjetas) { background-color: transparent !important; box-shadow: none !important; overflow: visible !important; }
+            .lista-tarjetas table.tabla-tarjetas tbody { padding: 0; background-color: transparent; }
+            .lista-tarjetas div.dt-container > .grid { padding-left: 0; padding-right: 0; }
+            table.tabla-tarjetas tbody tr,
+            table.tabla-tarjetas tfoot tr {
+                display: flex; flex-wrap: wrap; align-items: baseline;
+                row-gap: 0.125rem; padding: 0.875rem 1rem;
+            }
+            table.tabla-tarjetas tfoot { display: block; }
+            table.tabla-tarjetas td {
+                display: block; padding: 0 !important; border: 0 !important;
+                text-align: left; white-space: normal;
+            }
+            .tabla-tarjetas .t-marca    { order: 5; margin-right: 0.75rem; align-self: center; }
+            .tabla-tarjetas .t-pre      { order: 10; margin-right: 0.5rem; font-weight: 600; color: #374151; white-space: nowrap; }
+            /* El mínimo evita que el salto de renglón de abajo lo aplaste cuando no hay monto. */
+            .tabla-tarjetas .t-titulo   { order: 20; flex: 1 1 0; min-width: 40%; font-weight: 600; color: #111827; }
+            .tabla-tarjetas .t-monto    { order: 30; margin-left: 0.75rem; text-align: right !important; font-weight: 700; white-space: nowrap; }
+            .tabla-tarjetas .t-linea    { order: 40; flex-basis: 100%; font-size: 0.8125rem; color: #4b5563; }
+            .tabla-tarjetas .t-dato     { order: 50; margin-right: 0.375rem; font-size: 0.8125rem; color: #6b7280; }
+            /* El separador va sólo si antes hay un dato que se ve. */
+            .tabla-tarjetas .t-dato:not(.t-ocultar) ~ .t-dato::before { content: '· '; }
+            /*
+             * Dos saltos de renglón invisibles: después del título y el monto,
+             * y antes del pie. Así los datos nunca se suben al renglón del
+             * título ni se meten al lado de los botones.
+             */
+            table.tabla-tarjetas tbody tr::before,
+            table.tabla-tarjetas tbody tr::after { content: ''; flex-basis: 100%; height: 0; }
+            table.tabla-tarjetas tbody tr::before { order: 35; }
+            table.tabla-tarjetas tbody tr::after  { order: 55; }
+            .tabla-tarjetas .t-pie,
+            .tabla-tarjetas .t-acciones {
+                flex: 1 1 auto; margin-top: 0.625rem;
+                padding-top: 0.625rem !important; border-top: 1px solid #f3f4f6 !important;
+            }
+            .tabla-tarjetas .t-pie      { order: 60; }
+            .tabla-tarjetas .t-acciones { order: 70; }
+            .tabla-tarjetas .t-acciones > div { justify-content: flex-end; }
+            /*
+             * Tarjeta compacta (tr.t-compacta): sin pie, los botones van a la
+             * derecha del último renglón de datos en vez de ocupar uno propio.
+             */
+            table.tabla-tarjetas tbody tr.t-compacta { align-items: center; }
+            table.tabla-tarjetas tbody tr.t-compacta::after { display: none; }
+            .tabla-tarjetas tr.t-compacta .t-acciones {
+                flex: 0 0 auto; margin-left: auto; margin-top: 0.25rem;
+                padding-top: 0 !important; border-top: 0 !important;
+            }
+            .tabla-tarjetas .t-ocultar  { display: none !important; }
+            .tabla-tarjetas tr[data-href] { cursor: pointer; }
+
+            /* Filtros plegados (componente x-filtros): sin el triángulo del navegador. */
+            details.filtros > summary { list-style: none; }
+            details.filtros > summary::-webkit-details-marker { display: none; }
+
+            /*
+             * DataTables arma cada fila de controles como una grilla de dos
+             * columnas: en el celular va una sola, sin "Mostrar N registros",
+             * con el buscador a todo el ancho y la paginación centrada.
+             */
+            div.dt-container > .grid { grid-template-columns: 1fr; gap: 0.5rem; margin: 0; padding: 0.75rem 1rem; }
+            div.dt-container > .grid > div { justify-self: stretch; grid-column: auto; }
+            div.dt-container .dt-length { display: none; }
+            div.dt-container .dt-search input { width: 100%; margin: 0; padding: 0.5rem 0.75rem; }
+            div.dt-container .dt-info { font-size: 0.75rem; text-align: center; }
+            div.dt-container .dt-paging { text-align: center; }
+        }
     </style>
     @livewireStyles
 </head>
@@ -260,6 +367,74 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.tailwindcss.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    /*
+     * Confirmación antes de borrar o deshacer. El formulario la pide con
+     *   data-confirmar="¿Eliminar este viaje?"
+     *   data-confirmar-detalle="27/09 · Control Union · $ 251.910,73"  (opcional)
+     *   data-confirmar-boton="Sí, deshacer"                             (opcional)
+     * Escucha en el documento, así cubre también los botones con form="...".
+     * Si SweetAlert no cargó, pregunta con el confirm() del navegador.
+     */
+    document.addEventListener('submit', function (evento) {
+        const form = evento.target;
+        if (! form.dataset.confirmar || form.dataset.confirmado) return;
+
+        evento.preventDefault();
+
+        if (! window.Swal) {
+            if (confirm(form.dataset.confirmar + ' ' + (form.dataset.confirmarDetalle || ''))) form.submit();
+            return;
+        }
+
+        Swal.fire({
+            title: form.dataset.confirmar,
+            text: form.dataset.confirmarDetalle || '',
+            icon: 'warning',
+            iconColor: '#dc2626',
+            showCancelButton: true,
+            confirmButtonText: form.dataset.confirmarBoton || 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            focusCancel: true,
+            buttonsStyling: false,
+            customClass: {
+                popup: 'rounded-xl',
+                title: 'text-xl font-bold text-gray-800',
+                htmlContainer: 'text-sm text-gray-600',
+                actions: 'gap-3',
+                confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2.5 rounded transition',
+                cancelButton: 'bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-5 py-2.5 rounded transition',
+            },
+        }).then(function (resultado) {
+            if (! resultado.isConfirmed) return;
+            // submit() no vuelve a disparar este evento, pero por las dudas.
+            form.dataset.confirmado = '1';
+            form.submit();
+        });
+    });
+
+    // En el celular, tocar la tarjeta de un listado abre lo que corresponda
+    // (casi siempre Editar), salvo que se toque un botón, un link o un switch.
+    // Si la fila es para elegir (tiene un tilde t-marca), tocarla lo marca o desmarca.
+    document.addEventListener('click', function (evento) {
+        if (! window.matchMedia('(max-width: 639.98px)').matches) return;
+        // Sólo los controles: la tabla puede estar dentro de un formulario (Liquidación).
+        if (evento.target.closest('a, button, input, label, select, textarea')) return;
+
+        const fila = evento.target.closest('table.tabla-tarjetas tbody tr, [data-href]');
+        if (! fila) return;
+
+        const tilde = fila.querySelector('.t-marca input[type="checkbox"]');
+        if (tilde) {
+            tilde.checked = ! tilde.checked;
+            tilde.dispatchEvent(new Event('change', { bubbles: true }));
+        } else if (fila.dataset.href) {
+            window.location.href = fila.dataset.href;
+        }
+    });
+</script>
 <script>
     document.getElementById('menu-btn').addEventListener('click', function () {
         document.getElementById('mobile-menu').classList.toggle('hidden');

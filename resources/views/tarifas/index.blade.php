@@ -30,7 +30,7 @@
             <h2 class="px-4 py-3 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700">{{ $nombreCliente }}</h2>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold text-gray-600">Producto</th>
@@ -44,19 +44,19 @@
                     <tbody class="divide-y divide-gray-100">
                         @foreach($delCliente as $tarifa)
                             @php $vigente = $tarifa->estaVigente(); @endphp
-                            <tr class="hover:bg-gray-50 transition {{ $vigente ? '' : 'opacity-60' }}">
-                                <td class="px-4 py-3 text-gray-700">
+                            <tr class="t-compacta hover:bg-gray-50 transition {{ $vigente ? '' : 'opacity-60' }}" data-href="{{ route('tarifas.edit', $tarifa) }}">
+                                <td class="t-titulo px-4 py-3 text-gray-700">
                                     {{ $tarifa->producto ?? 'Cualquier carga' }}
                                     @if($tarifa->notas)
                                         <p class="text-xs text-gray-500 truncate max-w-xs" title="{{ $tarifa->notas }}">{{ $tarifa->notas }}</p>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{ $tarifa->rango() }}</td>
-                                <td class="px-4 py-3 text-right whitespace-nowrap font-semibold text-gray-900">
+                                <td class="t-dato px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{ $tarifa->rango() }}</td>
+                                <td class="t-monto px-4 py-3 text-right whitespace-nowrap font-semibold text-gray-900">
                                     {{ $tarifa->precioPorUnidad() }}
                                 </td>
-                                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $tarifa->vigente_desde->format('d/m/Y') }}</td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="t-dato px-4 py-3 text-gray-600 whitespace-nowrap"><span class="sm:hidden">desde el</span> {{ $tarifa->vigente_desde->format('d/m/Y') }}</td>
+                                <td class="t-dato px-4 py-3 text-center">
                                     @if($vigente)
                                         <span class="inline-flex px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">Vigente</span>
                                     @elseif($tarifa->vigente_desde->isFuture())
@@ -65,18 +65,18 @@
                                         <span class="inline-flex px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">Anterior</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="t-acciones px-4 py-3 text-center">
                                     <div class="flex justify-center gap-2">
                                         <a href="{{ route('tarifas.edit', $tarifa) }}"
-                                           class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+                                           class="hidden sm:inline-block text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
                                             Editar
                                         </a>
                                         <form method="POST" action="{{ route('tarifas.destroy', $tarifa) }}"
-                                              onsubmit="return confirm('¿Eliminar esta tarifa? Los viajes ya cargados no se tocan.')">
+                                              data-confirmar="¿Eliminar esta tarifa?" data-confirmar-detalle="Los viajes ya cargados no se tocan.">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit"
-                                                    class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                                    class="text-red-600 hover:text-red-800 font-medium text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-red-200 hover:bg-red-50 transition">
                                                 Eliminar
                                             </button>
                                         </form>

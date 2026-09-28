@@ -47,7 +47,7 @@
     </div>
 @endif
 
-<div class="bg-white rounded-lg shadow overflow-hidden">
+<div class="lista-tarjetas bg-white rounded-lg shadow overflow-hidden">
     @if($registros->isEmpty())
         <div class="text-center py-12 text-gray-500">
             <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@
         </div>
     @else
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Camión</th>
@@ -75,10 +75,14 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($registros as $reg)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="px-4 py-3 text-gray-600">{{ $reg->camion?->patente ?? '—' }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-700">{{ $reg->fecha->format('d/m/Y') }}</td>
-                            <td class="px-4 py-3">
+                        @php $pagaOtroDia = $reg->fecha_vencimiento && ! $reg->fecha_vencimiento->isSameDay($reg->fecha); @endphp
+                        <tr class="t-compacta hover:bg-gray-50 transition" data-href="{{ route('mantenimiento.edit', $reg) }}">
+                            <td class="t-dato {{ $camiones->count() > 1 ? '' : 't-ocultar' }} px-4 py-3 text-gray-600">{{ $reg->camion?->patente ?? '—' }}</td>
+                            <td class="t-pre px-4 py-3 whitespace-nowrap text-gray-700">
+                                <span class="hidden sm:inline">{{ $reg->fecha->format('d/m/Y') }}</span>
+                                <span class="sm:hidden">{{ $reg->fecha->format('d/m') }}</span>
+                            </td>
+                            <td class="t-titulo px-4 py-3">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                     {{ match($reg->tipo) {
                                         'service'   => 'bg-blue-100 text-blue-800',
@@ -92,7 +96,7 @@
                                     {{ \App\Models\Mantenimiento::$tipos[$reg->tipo] ?? $reg->tipo }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($reg->monto, 2, ',', '.') }}</td>
+                            <td class="t-monto px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($reg->monto, 2, ',', '.') }}</td>
                             {{-- <td class="px-4 py-3 text-right text-gray-600">
                                 {{ $reg->km_actuales ? number_format($reg->km_actuales, 0, ',', '.') . ' km' : '—' }}
                             </td>
@@ -108,23 +112,27 @@
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td> --}}
-                            <td class="px-4 py-3 text-gray-600 max-w-xs truncate" title="{{ $reg->detalle }}">
+                            <td class="t-linea {{ $reg->detalle ? '' : 't-ocultar' }} px-4 py-3 text-gray-600 sm:max-w-xs sm:truncate" title="{{ $reg->detalle }}">
                                 {{ $reg->detalle ?? '—' }}
                             </td>
-                            <td class="px-4 py-3 text-gray-600">{{ $reg->medioPago?->nombre ?? '—' }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-600">{{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}</td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="t-dato {{ $reg->medioPago ? '' : 't-ocultar' }} px-4 py-3 text-gray-600">{{ $reg->medioPago?->nombre ?? '—' }}</td>
+                            <td class="t-dato {{ $pagaOtroDia ? '' : 't-ocultar' }} px-4 py-3 whitespace-nowrap text-gray-600">
+                                <span class="sm:hidden">Se paga el</span>
+                                {{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}
+                            </td>
+                            <td class="t-acciones px-4 py-3 text-center">
                                 <div class="flex justify-center gap-2">
                                     <a href="{{ route('mantenimiento.edit', $reg) }}"
-                                       class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+                                       class="hidden sm:inline-block text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
                                         Editar
                                     </a>
                                     <form method="POST" action="{{ route('mantenimiento.destroy', $reg) }}"
-                                          onsubmit="return confirm('¿Eliminar este registro?')">
+                                          data-confirmar="¿Eliminar este registro?"
+                                          data-confirmar-detalle="{{ $reg->fecha->format('d/m/Y') }} · {{ \App\Models\Mantenimiento::$tipos[$reg->tipo] ?? $reg->tipo }} · $ {{ number_format($reg->monto, 2, ',', '.') }}. No se puede deshacer.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                                class="text-red-600 hover:text-red-800 font-medium text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-red-200 hover:bg-red-50 transition">
                                             Eliminar
                                         </button>
                                     </form>

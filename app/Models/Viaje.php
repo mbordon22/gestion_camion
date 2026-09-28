@@ -120,6 +120,34 @@ class Viaje extends Model
         return collect([$this->producto, $carga])->filter()->implode(' · ') ?: 'Precio cerrado';
     }
 
+    /**
+     * Qué viaje se está por borrar, para el modal de confirmación:
+     * "26/09/2026 · Ingenio la Corona · $ 256.185,02. No se puede deshacer."
+     */
+    public function resumenParaConfirmar(): string
+    {
+        return collect([
+            $this->fecha->format('d/m/Y'),
+            $this->cliente?->nombre,
+            '$ ' . number_format($this->total, 2, ',', '.'),
+        ])->filter()->implode(' · ') . '. No se puede deshacer.';
+    }
+
+    /**
+     * La carga en pocas letras, para el listado del celular: "28,17 t",
+     * "800 bolsas". Sin cantidad no hay nada que mostrar.
+     */
+    public function cargaCorta(): ?string
+    {
+        if (! $this->cantidad) {
+            return null;
+        }
+
+        $abreviada = ['toneladas' => 't', 'kilogramos' => 'kg'][$this->unidad] ?? $this->unidadEtiqueta();
+
+        return trim($this->cantidadFormateada() . ' ' . $abreviada);
+    }
+
     /** La cantidad sin decimales si es entera (800), con coma si no (28,5). */
     public function cantidadFormateada(): string
     {

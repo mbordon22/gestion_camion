@@ -29,7 +29,7 @@
             <form method="POST" action="{{ route('equipos.pagos.store', $equipo) }}">
                 @csrf
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-3 text-center">
@@ -46,16 +46,16 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach($pendientes as $viaje)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-2 text-center">
+                                    <td class="t-marca px-4 py-2 text-center">
                                         <input type="checkbox" name="viajes[]" value="{{ $viaje->id }}" checked
                                                data-monto="{{ $viaje->alquiler_monto }}"
                                                class="viaje-a-pagar rounded border-gray-300 text-blue-600 focus:ring-blue-400">
                                     </td>
-                                    <td class="px-4 py-2 text-gray-700 whitespace-nowrap">{{ $viaje->fecha->format('d/m/Y') }}</td>
-                                    <td class="px-4 py-2 text-gray-700">{{ $viaje->nro_orden ?? '—' }}</td>
-                                    <td class="px-4 py-2 text-gray-600">{{ $viaje->ruta() }}</td>
-                                    <td class="px-4 py-2 text-right text-gray-700 whitespace-nowrap">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
-                                    <td class="px-4 py-2 text-right font-semibold text-gray-900 whitespace-nowrap">
+                                    <td class="t-titulo px-4 py-2 text-gray-700 whitespace-nowrap">{{ $viaje->fecha->format('d/m/Y') }}</td>
+                                    <td class="t-dato {{ $viaje->nro_orden ? '' : 't-ocultar' }} px-4 py-2 text-gray-700"><span class="sm:hidden">Orden</span> {{ $viaje->nro_orden ?? '—' }}</td>
+                                    <td class="t-linea {{ $viaje->ruta() === '—' ? 't-ocultar' : '' }} px-4 py-2 text-gray-600">{{ $viaje->ruta() }}</td>
+                                    <td class="t-dato px-4 py-2 text-right text-gray-700 whitespace-nowrap"><span class="sm:hidden">viaje de</span> $ {{ number_format($viaje->total, 2, ',', '.') }}</td>
+                                    <td class="t-monto px-4 py-2 text-right font-semibold text-gray-900 whitespace-nowrap">
                                         $ {{ number_format($viaje->alquiler_monto, 2, ',', '.') }}
                                         @if($viaje->alquiler_porcentaje !== null)
                                             <span class="text-xs font-normal text-gray-500">({{ \App\Models\Equipo::porcentajeFormateado($viaje->alquiler_porcentaje) }}%)</span>
@@ -94,7 +94,7 @@
         @if($pagos->isEmpty())
             <div class="text-center py-10 text-gray-500 text-sm">Todavía no registraste pagos a este dueño.</div>
         @else
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <table class="tabla-tarjetas min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Pagado el</th>
@@ -105,20 +105,20 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($pagos as $pago)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{ $pago->fecha->format('d/m/Y') }}</td>
-                            <td class="px-4 py-3 text-gray-600">
+                        <tr class="t-compacta hover:bg-gray-50">
+                            <td class="t-titulo px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{{ $pago->fecha->format('d/m/Y') }}</td>
+                            <td class="t-dato px-4 py-3 text-gray-600">
                                 {{ $pago->viajes }} viaje{{ $pago->viajes !== 1 ? 's' : '' }}
                                 · del {{ $pago->desde->format('d/m') }} al {{ $pago->hasta->format('d/m/Y') }}
                             </td>
-                            <td class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">$ {{ number_format($pago->monto, 2, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-right">
+                            <td class="t-monto px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">$ {{ number_format($pago->monto, 2, ',', '.') }}</td>
+                            <td class="t-acciones px-4 py-3 text-right">
                                 <form method="POST" action="{{ route('equipos.pagos.destroy', [$equipo, $pago->dia]) }}"
-                                      onsubmit="return confirm('¿Deshacer este pago? Esos viajes vuelven a figurar como adeudados.')">
+                                      data-confirmar="¿Deshacer este pago?" data-confirmar-detalle="Esos viajes vuelven a figurar como adeudados al dueño." data-confirmar-boton="Sí, deshacer">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                            class="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition">
+                                            class="text-red-600 hover:text-red-800 font-medium text-sm sm:text-xs px-3 py-1.5 sm:px-2 sm:py-1 rounded border border-red-200 hover:bg-red-50 transition">
                                         Deshacer
                                     </button>
                                 </form>
