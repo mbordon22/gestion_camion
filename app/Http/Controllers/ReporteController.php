@@ -6,6 +6,7 @@ use App\Models\Viaje;
 use App\Models\Combustible;
 use App\Models\Mantenimiento;
 use App\Models\Camion;
+use App\Models\ChoferMovimiento;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -17,13 +18,16 @@ class ReporteController extends Controller
         [$desde, $hasta] = $this->rangoFechas($periodo, $request);
         $camionId = $request->get('camion_id');
 
-        $viajes = Viaje::with('cliente', 'equipo')->whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)
+        $viajes = Viaje::with('cliente', 'equipo', 'chofer')->whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta)
             ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->orderByDesc('fecha')->get();
         $combustible = Combustible::whereBetween('fecha', [$desde, $hasta])
             ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->get();
         $mantenimiento = Mantenimiento::whereBetween('fecha', [$desde, $hasta])
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
+            ->get();
+        $gastosChofer = ChoferMovimiento::gastos()->whereBetween('fecha', [$desde, $hasta])
             ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->get();
 
@@ -33,7 +37,12 @@ class ReporteController extends Controller
         // La parte del dueño del equipo alquilado es un costo del viaje: va
         // por la fecha del viaje, se le haya pagado o no.
         $totalAlquiler     = $viajes->sum('alquiler_monto');
-        $totalGastos       = $totalCombustible + $totalMantenimiento + $totalAlquiler;
+        // Lo mismo la comisión del chofer. Sus gastos van por la fecha del
+        // gasto; los adelantos no cuentan, son parte de la comisión.
+        $totalComision     = $viajes->sum('comision_monto');
+        $totalGastosChofer = $gastosChofer->sum('monto');
+        $totalChofer       = $totalComision + $totalGastosChofer;
+        $totalGastos       = $totalCombustible + $totalMantenimiento + $totalAlquiler + $totalChofer;
         $resultado         = $totalIngresos - $totalGastos;
         $cantidadViajes    = $viajes->count();
         $litrosCargados    = $combustible->sum('litros');
@@ -64,11 +73,26 @@ class ReporteController extends Controller
             ->sortByDesc('bruto')
             ->values();
 
+        // Cuánto generó cada chofer a comisión y cuánto se llevó.
+        $porChofer = $viajes->filter(fn ($viaje) => $viaje->comision_monto > 0)
+            ->groupBy('chofer_id')
+            ->map(fn ($grupo, $choferId) => (object) [
+                'chofer'       => $grupo->first()->chofer,
+                'viajes'       => $grupo->count(),
+                'bruto'        => $grupo->sum('total'),
+                'comision'     => $grupo->sum('comision_monto'),
+                'gastos'       => $gastosChofer->where('chofer_id', $choferId)->sum('monto'),
+                'sinLiquidar'  => $grupo->whereNull('liquidacion_id')->sum('comision_monto'),
+            ])
+            ->sortByDesc('bruto')
+            ->values();
+
         $camiones = Camion::orderBy('patente')->get();
 
         return view('reportes.index', compact(
             'viajes', 'periodo', 'desde', 'hasta',
             'totalIngresos', 'totalCombustible', 'totalMantenimiento', 'totalAlquiler', 'porEquipo',
+            'totalComision', 'totalGastosChofer', 'totalChofer', 'porChofer',
             'totalGastos', 'resultado', 'cantidadViajes', 'litrosCargados',
             'camiones', 'camionId', 'porCliente'
         ));

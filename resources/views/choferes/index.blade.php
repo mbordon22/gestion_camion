@@ -28,8 +28,10 @@
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Nombre</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">DNI</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Teléfono</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Cómo cobra</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Viajes</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Último viaje</th>
+                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Le debés</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-600">Estado</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
                     </tr>
@@ -45,9 +47,25 @@
                             </td>
                             <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $chofer->dni ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $chofer->telefono ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $chofer->condicion() }}</td>
                             <td class="px-4 py-3 text-right text-gray-700">{{ $chofer->viajes_count }}</td>
                             <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
                                 {{ $chofer->viajes_max_fecha ? \Carbon\Carbon::parse($chofer->viajes_max_fecha)->format('d/m/Y') : '—' }}
+                            </td>
+                            @php
+                                $saldo = $chofer->comisiones_sin_liquidar - $chofer->adelantos_sin_liquidar + $chofer->gastos_sin_liquidar;
+                            @endphp
+                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                @if($chofer->comisiones_sin_liquidar > 0 || $chofer->adelantos_sin_liquidar > 0 || $chofer->gastos_sin_liquidar > 0)
+                                    <span class="font-semibold {{ $saldo >= 0 ? 'text-amber-700' : 'text-red-700' }}">
+                                        {{ $saldo < 0 ? '−' : '' }}$ {{ number_format(abs($saldo), 2, ',', '.') }}
+                                    </span>
+                                    @if($chofer->adelantos_sin_liquidar > 0)
+                                        <p class="text-xs text-gray-500">ya descontados $ {{ number_format($chofer->adelantos_sin_liquidar, 0, ',', '.') }} de adelantos</p>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-center">
                                 @if($chofer->activo)
@@ -58,6 +76,12 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="flex justify-center gap-2">
+                                    @if($chofer->cobraPorViaje() || $chofer->movimientos_count > 0 || $chofer->liquidaciones_count > 0)
+                                        <a href="{{ route('choferes.liquidacion', $chofer) }}"
+                                           class="text-gray-700 hover:text-gray-900 font-medium text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-100 transition whitespace-nowrap">
+                                            Liquidación
+                                        </a>
+                                    @endif
                                     @if($chofer->viajes_count > 0)
                                         {{-- Todos sus viajes, desde el primero. --}}
                                         <a href="{{ route('viajes.index', [
@@ -75,7 +99,7 @@
                                         Editar
                                     </a>
                                     <form method="POST" action="{{ route('choferes.destroy', $chofer) }}"
-                                          onsubmit="return confirm('¿Eliminar este chofer? Si tiene viajes cargados se desactivará.')">
+                                          onsubmit="return confirm('¿Eliminar este chofer? Si tiene viajes o pagos cargados se desactivará.')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

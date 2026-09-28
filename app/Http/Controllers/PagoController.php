@@ -6,6 +6,7 @@ use App\Models\Combustible;
 use App\Models\Mantenimiento;
 use App\Models\Cuota;
 use App\Models\Equipo;
+use App\Models\Chofer;
 use Carbon\Carbon;
 
 class PagoController extends Controller
@@ -107,6 +108,18 @@ class PagoController extends Controller
             ->filter(fn ($equipo) => $equipo->sin_pagar > 0)
             ->values();
 
-        return view('pagos.index', compact('meses', 'atrasado', 'totalAtrasado', 'totalProximoMes', 'mesProximoKey', 'alquileres'));
+        // --- Lo que se le debe a cada chofer a comisión ---
+        // Igual que el alquiler: se le paga cuando se liquida, sin vencimiento.
+        $choferes = Chofer::withSum(['viajes as comisiones' => fn ($q) => $q->comisionSinLiquidar()], 'comision_monto')
+            ->withCount(['viajes as viajes_sin_liquidar' => fn ($q) => $q->comisionSinLiquidar()])
+            ->withSum(['movimientos as adelantos' => fn ($q) => $q->sinLiquidar()->adelantos()], 'monto')
+            ->withSum(['movimientos as gastos' => fn ($q) => $q->sinLiquidar()->gastos()], 'monto')
+            ->orderBy('nombre')
+            ->get()
+            ->each(fn ($chofer) => $chofer->saldo = $chofer->comisiones - $chofer->adelantos + $chofer->gastos)
+            ->filter(fn ($chofer) => $chofer->comisiones > 0 || $chofer->adelantos > 0 || $chofer->gastos > 0)
+            ->values();
+
+        return view('pagos.index', compact('meses', 'atrasado', 'totalAtrasado', 'totalProximoMes', 'mesProximoKey', 'alquileres', 'choferes'));
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ChoferController;
 use App\Http\Controllers\DestinoController;
 use App\Http\Controllers\EquipoController;
+use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\MedioPagoController;
@@ -31,6 +32,12 @@ Route::middleware('auth')->group(function () {
         ->parameters(['camiones' => 'camion']);
     Route::resource('clientes', ClienteController::class)->except(['show'])
         ->parameters(['clientes' => 'cliente']);
+    Route::get('choferes/{chofer}/liquidacion', [LiquidacionController::class, 'index'])->name('choferes.liquidacion');
+    Route::post('choferes/{chofer}/liquidacion', [LiquidacionController::class, 'store'])->name('choferes.liquidacion.store');
+    Route::post('choferes/{chofer}/movimientos', [LiquidacionController::class, 'storeMovimiento'])->name('choferes.movimientos.store');
+    Route::delete('movimientos-chofer/{movimiento}', [LiquidacionController::class, 'destroyMovimiento'])->name('choferes.movimientos.destroy');
+    Route::get('liquidaciones/{liquidacion}', [LiquidacionController::class, 'show'])->name('liquidaciones.show');
+    Route::delete('liquidaciones/{liquidacion}', [LiquidacionController::class, 'destroy'])->name('liquidaciones.destroy');
     Route::resource('choferes', ChoferController::class)->except(['show'])
         ->parameters(['choferes' => 'chofer']);
     Route::resource('destinos', DestinoController::class)->except(['show']);

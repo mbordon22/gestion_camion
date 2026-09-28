@@ -81,6 +81,43 @@
     </div>
 @endif
 
+{{-- Choferes a comisión --}}
+@if($choferes->isNotEmpty())
+    <div class="bg-purple-50 border border-purple-300 rounded-lg shadow-sm mb-6 overflow-hidden">
+        <div class="px-5 py-3 border-b border-purple-200 flex items-center justify-between">
+            <h2 class="font-semibold text-purple-900">Choferes sin liquidar</h2>
+            <span class="font-bold text-purple-900">$ {{ number_format($choferes->sum('saldo'), 2, ',', '.') }}</span>
+        </div>
+        <table class="min-w-full divide-y divide-purple-100 text-sm">
+            <tbody class="divide-y divide-purple-100">
+                @foreach($choferes as $chofer)
+                    <tr>
+                        <td class="px-5 py-2 text-gray-800 font-medium">{{ $chofer->nombre }}</td>
+                        <td class="px-5 py-2 text-gray-500">
+                            {{ $chofer->viajes_sin_liquidar }} viaje{{ $chofer->viajes_sin_liquidar !== 1 ? 's' : '' }}
+                            @if($chofer->adelantos > 0)
+                                · adelantos −$ {{ number_format($chofer->adelantos, 0, ',', '.') }}
+                            @endif
+                            @if($chofer->gastos > 0)
+                                · gastos +$ {{ number_format($chofer->gastos, 0, ',', '.') }}
+                            @endif
+                        </td>
+                        <td class="px-5 py-2 text-right font-medium whitespace-nowrap {{ $chofer->saldo >= 0 ? 'text-purple-900' : 'text-red-700' }}">
+                            {{ $chofer->saldo < 0 ? '−' : '' }}$ {{ number_format(abs($chofer->saldo), 2, ',', '.') }}
+                        </td>
+                        <td class="px-5 py-2 text-right">
+                            <a href="{{ route('choferes.liquidacion', $chofer) }}"
+                               class="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 rounded border border-blue-200 hover:bg-white transition whitespace-nowrap">
+                                Liquidar
+                            </a>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+@endif
+
 {{-- Meses --}}
 @if($meses->isEmpty())
     <div class="bg-white rounded-lg shadow text-center py-12 text-gray-500">

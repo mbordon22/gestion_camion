@@ -95,12 +95,27 @@
         </div>
     @endif
 
-    <div class="bg-gray-100 border border-gray-300 rounded-lg p-4">
+    @if($totalChofer > 0)
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <p class="text-xs text-purple-700 font-medium uppercase tracking-wide">Chofer</p>
+            <p class="text-2xl font-bold text-purple-800 mt-1">$ {{ number_format($totalChofer, 2, ',', '.') }}</p>
+            <p class="text-xs text-purple-700 mt-1">
+                Comisiones $ {{ number_format($totalComision, 0, ',', '.') }}
+                @if($totalGastosChofer > 0)
+                    · gastos que pagó él $ {{ number_format($totalGastosChofer, 0, ',', '.') }}
+                @endif
+            </p>
+        </div>
+    @endif
+
+    {{-- Con una tarjeta extra, "Total gastos" ocupa dos lugares para que el resultado arranque en su propia fila. --}}
+    @php $extras = ($totalAlquiler > 0 ? 1 : 0) + ($totalChofer > 0 ? 1 : 0); @endphp
+    <div class="bg-gray-100 border border-gray-300 rounded-lg p-4 {{ $extras === 1 ? 'sm:col-span-2' : '' }}">
         <p class="text-xs text-gray-600 font-medium uppercase tracking-wide">Total gastos</p>
         <p class="text-2xl font-bold text-gray-800 mt-1">$ {{ number_format($totalGastos, 2, ',', '.') }}</p>
     </div>
 
-    <div class="col-span-2 {{ $totalAlquiler > 0 ? 'sm:col-span-3' : 'sm:col-span-2' }} rounded-lg p-4 border-2
+    <div class="col-span-2 {{ $extras > 0 ? 'sm:col-span-3' : 'sm:col-span-2' }} rounded-lg p-4 border-2
                 {{ $resultado >= 0 ? 'bg-blue-50 border-blue-300' : 'bg-red-50 border-red-300' }}">
         <p class="text-xs font-medium uppercase tracking-wide {{ $resultado >= 0 ? 'text-blue-600' : 'text-red-600' }}">
             Resultado neto (ingresos − gastos)
@@ -189,6 +204,44 @@
 </div>
 @endif
 
+{{-- Choferes a comisión: cuánto generó cada uno y cuánto se llevó --}}
+@if($porChofer->isNotEmpty())
+<div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
+        <h2 class="font-semibold text-gray-700">Choferes a comisión</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Chofer</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Viajes</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Total viajes</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Comisión</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Gastos que pagó</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-600">Sin liquidar</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach($porChofer as $fila)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-800">
+                            <a href="{{ route('choferes.liquidacion', $fila->chofer) }}" class="text-blue-600 hover:text-blue-800 hover:underline">{{ $fila->chofer->nombre }}</a>
+                            <p class="text-xs font-normal text-gray-500">{{ $fila->chofer->condicion() }}</p>
+                        </td>
+                        <td class="px-4 py-3 text-right text-gray-700">{{ $fila->viajes }}</td>
+                        <td class="px-4 py-3 text-right text-gray-700">$ {{ number_format($fila->bruto, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-purple-700">$ {{ number_format($fila->comision, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right {{ $fila->gastos > 0 ? 'text-gray-700' : 'text-gray-400' }}">$ {{ number_format($fila->gastos, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right {{ $fila->sinLiquidar > 0 ? 'font-semibold text-amber-700' : 'text-gray-400' }}">$ {{ number_format($fila->sinLiquidar, 2, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 {{-- Tabla de viajes del período --}}
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="px-5 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
@@ -214,6 +267,9 @@
                         @if($totalAlquiler > 0)
                             <th class="px-4 py-3 text-right font-semibold text-gray-600">Alquiler equipo</th>
                         @endif
+                        @if($totalComision > 0)
+                            <th class="px-4 py-3 text-right font-semibold text-gray-600">Chofer</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -230,6 +286,11 @@
                                     {{ $viaje->alquiler_monto > 0 ? '−$ ' . number_format($viaje->alquiler_monto, 2, ',', '.') : '—' }}
                                 </td>
                             @endif
+                            @if($totalComision > 0)
+                                <td class="px-4 py-3 text-right text-purple-700">
+                                    {{ $viaje->comision_monto > 0 ? '−$ ' . number_format($viaje->comision_monto, 2, ',', '.') : '—' }}
+                                </td>
+                            @endif
                         </tr>
                     @endforeach
                 </tbody>
@@ -239,6 +300,9 @@
                         <td class="px-4 py-3 text-right text-green-700">$ {{ number_format($totalIngresos, 2, ',', '.') }}</td>
                         @if($totalAlquiler > 0)
                             <td class="px-4 py-3 text-right text-amber-700">−$ {{ number_format($totalAlquiler, 2, ',', '.') }}</td>
+                        @endif
+                        @if($totalComision > 0)
+                            <td class="px-4 py-3 text-right text-purple-700">−$ {{ number_format($totalComision, 2, ',', '.') }}</td>
                         @endif
                     </tr>
                 </tfoot>

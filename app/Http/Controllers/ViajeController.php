@@ -43,6 +43,7 @@ class ViajeController extends Controller
 
         $totalPeriodo = $viajes->sum('total');
         $totalAlquiler = $viajes->sum('alquiler_monto');
+        $totalComision = $viajes->sum('comision_monto');
         $cantidadViajes = $viajes->count();
 
         $cobrados   = $viajes->where('cobrado', true);
@@ -58,7 +59,7 @@ class ViajeController extends Controller
         $choferes = Chofer::orderBy('nombre')->get();
 
         return view('viajes.index', compact(
-            'viajes', 'totalPeriodo', 'totalAlquiler', 'cantidadViajes', 'periodo', 'desde', 'hasta',
+            'viajes', 'totalPeriodo', 'totalAlquiler', 'totalComision', 'cantidadViajes', 'periodo', 'desde', 'hasta',
             'totalCobrado', 'totalNoCobrado', 'cantidadCobrados', 'cantidadNoCobrados',
             'camiones', 'camionId', 'clientes', 'clienteId', 'choferes', 'choferId'
         ));
@@ -211,9 +212,10 @@ class ViajeController extends Controller
      * llevaste y cómo lo cobrás son datos distintos. Un flete de precio cerrado
      * igual movió 27,7 toneladas y ese peso tiene que quedar registrado.
      *
-     * Con un equipo alquilado también resuelve cuánto se lleva el dueño, sobre
-     * el total bruto. $anterior es el viaje que se edita, para respetar lo que
-     * ya se había grabado.
+     * Con un equipo alquilado también resuelve cuánto se lleva el dueño, y con
+     * un chofer a comisión cuánto se lleva el chofer, los dos sobre el total
+     * bruto. $anterior es el viaje que se edita, para respetar lo que ya se
+     * había grabado.
      */
     private function validar(Request $request, ?Viaje $anterior = null): array
     {
@@ -280,6 +282,19 @@ class ViajeController extends Controller
 
         if ($choferNuevo) {
             $validated['chofer_id'] = Chofer::firstOrCreate(['nombre' => $validated['chofer_nuevo']])->id;
+        }
+
+        // La comisión del chofer, también sobre el bruto. Va después del alta
+        // al vuelo porque necesita saber quién es el chofer.
+        $chofer = isset($validated['chofer_id']) ? Chofer::find($validated['chofer_id']) : null;
+
+        $validated = array_merge($validated, $chofer
+            ? $chofer->comisionDe((float) $validated['total'], $anterior)
+            : ['comision_porcentaje' => null, 'comision_monto' => null]);
+
+        // Si cambió el chofer, el viaje sale de la liquidación del anterior.
+        if ($anterior?->liquidacion_id && $anterior->chofer_id !== $chofer?->id) {
+            $validated['liquidacion_id'] = null;
         }
 
         // El destino nuevo se guarda además en el catálogo, con el origen y los

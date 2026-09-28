@@ -47,7 +47,12 @@
         @error('cliente_nuevo') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
 
-    {{-- Quien maneja. Mismo criterio que el cliente: se puede crear al vuelo. --}}
+    {{--
+        Quien maneja. Mismo criterio que el cliente: se puede crear al vuelo.
+        Cada opción lleva cómo cobra, para que el aviso del total haga la
+        cuenta; igual que con el equipo, en un viaje ya cargado con este chofer
+        vale lo que se grabó (Chofer::comisionDe).
+    --}}
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Chofer</label>
         <select name="chofer_id" id="chofer_id"
@@ -55,7 +60,23 @@
                        @error('chofer_id') border-red-400 @enderror">
             <option value="">Sin chofer</option>
             @foreach($choferes as $opcion)
-                <option value="{{ $opcion->id }}" {{ (string) $choferActual === (string) $opcion->id ? 'selected' : '' }}>{{ $opcion->nombre }}</option>
+                @php
+                    $grabado = isset($viaje) && $viaje->exists && $viaje->chofer_id === $opcion->id;
+                    if ($grabado && $viaje->liquidacion_id) {
+                        // Ya se le pagó: el monto no se mueve aunque cambie el total.
+                        $modalidadChofer = $viaje->comision_monto !== null ? 'fijo_viaje' : '';
+                        $valorChofer = $viaje->comision_monto;
+                    } else {
+                        $modalidadChofer = $opcion->modalidad;
+                        $valorChofer = $opcion->esPorcentaje()
+                            ? ($grabado && $viaje->comision_porcentaje !== null ? $viaje->comision_porcentaje : $opcion->valor)
+                            : ($grabado && $viaje->comision_monto !== null ? $viaje->comision_monto : $opcion->valor);
+                    }
+                @endphp
+                <option value="{{ $opcion->id }}"
+                        data-modalidad="{{ $modalidadChofer }}"
+                        data-valor="{{ $valorChofer }}"
+                        {{ (string) $choferActual === (string) $opcion->id ? 'selected' : '' }}>{{ $opcion->nombre }}</option>
             @endforeach
             <option value="nuevo" {{ $choferEsNuevo ? 'selected' : '' }}>+ Nuevo chofer…</option>
         </select>
@@ -236,6 +257,12 @@
         @if(isset($viaje) && $viaje->alquiler_pagado_el)
             <p class="text-xs mt-1 text-green-700">Al dueño del equipo ya se le pagó este viaje el {{ $viaje->alquiler_pagado_el->format('d/m/Y') }}.</p>
         @endif
+        @if(isset($viaje) && $viaje->exists && $viaje->liquidacion_id)
+            <p class="text-xs mt-1 text-green-700">
+                Al chofer ya se le liquidó este viaje el {{ $viaje->liquidacion?->fecha->format('d/m/Y') }}: su comisión queda como se pagó.
+                Si cambiás de chofer, sale de esa liquidación.
+            </p>
+        @endif
     </div>
 
     {{-- El destino sale del catálogo y trae consigo el origen y los km. --}}
@@ -397,29 +424,51 @@
         if (opcion.dataset.origen) inpOrigen.value = opcion.dataset.origen;
     }
 
-    // Equipo alquilado: cuánto se lleva el dueño y cuánto queda para el
-    // camión. Es sólo el aviso; el monto lo calcula el servidor al guardar.
+    // Equipo alquilado y chofer a comisión: cuánto se lleva cada uno y
+    // cuánto queda para el camión. Es sólo el aviso; los montos los calcula
+    // el servidor al guardar.
     const selEquipo     = document.getElementById('equipo_id');
+    const selChofer     = document.getElementById('chofer_id');
     const avisoAlquiler = document.getElementById('aviso-alquiler');
     const selCamion     = document.getElementById('camion_id');
     const pesos = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    function mostrarAlquiler() {
-        const opcion = selEquipo?.selectedOptions[0];
-        const total  = parseFloat(inpTotal.value);
+    // Lo que se lleva alguien según su acuerdo: [monto, " (15%)"].
+    function parteDe(opcion, total) {
+        const valor = parseFloat(opcion.dataset.valor) || 0;
+        const porcentaje = opcion.dataset.modalidad === 'porcentaje';
+        return [
+            porcentaje ? Math.round(total * valor) / 100 : valor,
+            porcentaje ? ' (' + String(valor).replace('.', ',') + '%)' : '',
+        ];
+    }
 
-        if (! opcion || opcion.dataset.alquilado !== '1' || isNaN(total)) {
+    function mostrarAlquiler() {
+        const total  = parseFloat(inpTotal.value);
+        const equipo = selEquipo?.selectedOptions[0];
+        const chofer = selChofer.selectedOptions[0];
+        const partes = [];
+        let queda = total;
+
+        if (! isNaN(total) && equipo && equipo.dataset.alquilado === '1') {
+            const [monto, detalle] = parteDe(equipo, total);
+            partes.push('el dueño del equipo $ ' + pesos.format(monto) + detalle);
+            queda -= monto;
+        }
+        if (! isNaN(total) && chofer && chofer.dataset.modalidad) {
+            const [monto, detalle] = parteDe(chofer, total);
+            partes.push('el chofer $ ' + pesos.format(monto) + detalle);
+            queda -= monto;
+        }
+
+        if (partes.length === 0) {
             avisoAlquiler.classList.add('hidden');
             return;
         }
 
-        const valor = parseFloat(opcion.dataset.valor) || 0;
-        const porcentaje = opcion.dataset.modalidad === 'porcentaje';
-        const alquiler = porcentaje ? Math.round(total * valor) / 100 : valor;
-        const parte = porcentaje ? ' (' + String(valor).replace('.', ',') + '%)' : '';
-
-        avisoAlquiler.textContent = 'El dueño del equipo se lleva $ ' + pesos.format(alquiler) + parte
-            + '. Te quedan $ ' + pesos.format(total - alquiler) + '.';
+        const texto = partes.join(' y ');
+        avisoAlquiler.textContent = 'Se lleva' + (partes.length > 1 ? 'n ' : ' ') + texto
+            + '. Te quedan $ ' + pesos.format(queda) + '.';
         avisoAlquiler.classList.remove('hidden');
     }
 
@@ -440,7 +489,7 @@
         consultarOrden();
         consultarTarifa(true);
     });
-    conectarNuevo('chofer_id', 'chofer_nuevo');
+    conectarNuevo('chofer_id', 'chofer_nuevo', mostrarAlquiler);
     const selDestino = conectarNuevo('destino', 'destino_nuevo', () => {
         completarDesdeDestino();
         // El destino acaba de cambiar los km, así que la tarifa puede ser otra.

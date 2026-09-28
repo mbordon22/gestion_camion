@@ -36,7 +36,12 @@
         {{ $resultado >= 0 ? '' : '−' }}$ {{ number_format(abs($resultado), 2, ',', '.') }}
     </p>
     <p class="text-xs mt-2 {{ $resultado >= 0 ? 'text-blue-600' : 'text-red-600' }}">
-        Lo que entró por viajes menos lo que se gastó en combustible{{ $totalAlquiler > 0 ? ', mantenimiento y alquiler de equipos' : ' y mantenimiento' }}.
+        @php
+            $conceptos = collect(['combustible', 'mantenimiento'])
+                ->when($totalAlquiler > 0, fn ($c) => $c->push('alquiler de equipos'))
+                ->when($totalChofer > 0, fn ($c) => $c->push('el chofer'));
+        @endphp
+        Lo que entró por viajes menos lo que se gastó en {{ $conceptos->slice(0, -1)->implode(', ') }} y {{ $conceptos->last() }}.
     </p>
 </div>
 
@@ -56,6 +61,9 @@
             Mantenimiento $ {{ number_format($totalMantenimiento, 0, ',', '.') }}
             @if($totalAlquiler > 0)
                 · Alquiler de equipos $ {{ number_format($totalAlquiler, 0, ',', '.') }}
+            @endif
+            @if($totalChofer > 0)
+                · Chofer $ {{ number_format($totalChofer, 0, ',', '.') }}
             @endif
         </p>
     </div>

@@ -119,14 +119,23 @@
                 <span>Sin cobrar:</span>
                 <span id="bd-total-no-cobrado" class="font-semibold">$ {{ number_format($totalNoCobrado, 2, ',', '.') }}</span>
             </p>
-            @if($totalAlquiler > 0)
-                <p class="flex justify-between text-amber-700 pt-1 mt-1 border-t border-green-200">
-                    <span>Para el dueño del equipo:</span>
-                    <span class="font-semibold">−$ {{ number_format($totalAlquiler, 2, ',', '.') }}</span>
-                </p>
+            @if($totalAlquiler > 0 || $totalComision > 0)
+                <div class="pt-1 mt-1 border-t border-green-200"></div>
+                @if($totalAlquiler > 0)
+                    <p class="flex justify-between text-amber-700">
+                        <span>Para el dueño del equipo:</span>
+                        <span class="font-semibold">−$ {{ number_format($totalAlquiler, 2, ',', '.') }}</span>
+                    </p>
+                @endif
+                @if($totalComision > 0)
+                    <p class="flex justify-between text-purple-700">
+                        <span>Para el chofer:</span>
+                        <span class="font-semibold">−$ {{ number_format($totalComision, 2, ',', '.') }}</span>
+                    </p>
+                @endif
                 <p class="flex justify-between text-green-800">
                     <span>Te queda:</span>
-                    <span class="font-semibold">$ {{ number_format($totalPeriodo - $totalAlquiler, 2, ',', '.') }}</span>
+                    <span class="font-semibold">$ {{ number_format($totalPeriodo - $totalAlquiler - $totalComision, 2, ',', '.') }}</span>
                 </p>
             @endif
         </div>
@@ -176,6 +185,11 @@
                             @if($viaje->alquiler_monto > 0)
                                 <p class="text-xs font-normal text-amber-700" title="Lo que se lleva el dueño de {{ $viaje->equipo?->nombre ?? 'el equipo' }}">
                                     −$ {{ number_format($viaje->alquiler_monto, 2, ',', '.') }} {{ $viaje->equipo?->nombre ?? 'equipo' }}
+                                </p>
+                            @endif
+                            @if($viaje->comision_monto > 0)
+                                <p class="text-xs font-normal text-purple-700" title="Comisión de {{ $viaje->chofer?->nombre ?? 'el chofer' }}{{ $viaje->liquidacion_id ? ' (ya liquidada)' : '' }}">
+                                    −$ {{ number_format($viaje->comision_monto, 2, ',', '.') }} chofer{{ $viaje->liquidacion_id ? ' ✓' : '' }}
                                 </p>
                             @endif
                         </td>

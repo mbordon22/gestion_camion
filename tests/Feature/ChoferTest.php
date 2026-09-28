@@ -110,7 +110,8 @@ class ChoferTest extends TestCase
         $this->actingAs($this->usuario)
             ->get(route('viajes.create'))
             ->assertOk()
-            ->assertSee('<option value="' . $ultimo->id . '" selected>Rivadeneira</option>', false)
+            ->assertViewHas('choferSugerido', $ultimo->id)
+            ->assertSeeInOrder(['value="' . $ultimo->id . '"', 'selected>Rivadeneira</option>'], false)
             ->assertSee('+ Nuevo chofer…');
     }
 

@@ -6,6 +6,7 @@ use App\Models\Viaje;
 use App\Models\Combustible;
 use App\Models\Mantenimiento;
 use App\Models\Camion;
+use App\Models\ChoferMovimiento;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -42,9 +43,15 @@ class InicioController extends Controller
             ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
             ->sum('monto');
 
+        // Lo que el chofer pagó de su bolsillo por el camión y se le devuelve.
+        $totalGastosChofer = ChoferMovimiento::gastos()->whereBetween('fecha', [$desde, $hasta])
+            ->when($camionId, fn ($q) => $q->where('camion_id', $camionId))
+            ->sum('monto');
+
         $totalIngresos  = $viajes->sum('total');
         $totalAlquiler  = $viajes->sum('alquiler_monto');
-        $totalGastos    = $totalCombustible + $totalMantenimiento + $totalAlquiler;
+        $totalChofer    = $viajes->sum('comision_monto') + $totalGastosChofer;
+        $totalGastos    = $totalCombustible + $totalMantenimiento + $totalAlquiler + $totalChofer;
         $resultado      = $totalIngresos - $totalGastos;
         $cantidadViajes = $viajes->count();
         $totalPorCobrar = $viajes->where('cobrado', false)->sum('total');
@@ -54,7 +61,7 @@ class InicioController extends Controller
 
         return view('inicio', compact(
             'resultado', 'totalIngresos', 'totalGastos', 'totalCombustible',
-            'totalMantenimiento', 'totalAlquiler', 'cantidadViajes', 'totalPorCobrar',
+            'totalMantenimiento', 'totalAlquiler', 'totalChofer', 'cantidadViajes', 'totalPorCobrar',
             'ultimosViajes', 'mes', 'camiones', 'camionId'
         ));
     }

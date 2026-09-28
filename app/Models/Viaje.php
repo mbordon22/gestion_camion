@@ -12,6 +12,7 @@ class Viaje extends Model
         'camion_id', 'cliente_id', 'chofer_id', 'equipo_id', 'modo_cobro', 'fecha', 'fecha_carga',
         'nro_orden', 'producto', 'cantidad', 'unidad', 'precio_unitario', 'total', 'cobrado',
         'alquiler_porcentaje', 'alquiler_monto', 'alquiler_pagado_el',
+        'comision_porcentaje', 'comision_monto', 'liquidacion_id',
         'origen', 'destino', 'km_recorridos', 'observaciones', 'created_at',
     ];
 
@@ -29,6 +30,9 @@ class Viaje extends Model
         'alquiler_porcentaje' => 'decimal:2',
         'alquiler_monto' => 'decimal:2',
         'alquiler_pagado_el' => 'date',
+        'comision_porcentaje' => 'decimal:2',
+        'comision_monto' => 'decimal:2',
+        'liquidacion_id' => 'integer',
         'km_recorridos' => 'integer',
         'created_at' => 'datetime',
     ];
@@ -86,16 +90,27 @@ class Viaje extends Model
         return $this->belongsTo(Equipo::class);
     }
 
+    public function liquidacion()
+    {
+        return $this->belongsTo(Liquidacion::class);
+    }
+
     /** Lo que le toca al dueño del equipo alquilado y todavía no se le pagó. */
     public function scopeAlquilerSinPagar($query)
     {
         return $query->where('alquiler_monto', '>', 0)->whereNull('alquiler_pagado_el');
     }
 
-    /** Lo que queda para el camión después de pagarle al dueño del equipo. */
+    /** La comisión del chofer que todavía no entró en ninguna liquidación. */
+    public function scopeComisionSinLiquidar($query)
+    {
+        return $query->where('comision_monto', '>', 0)->whereNull('liquidacion_id');
+    }
+
+    /** Lo que queda para el camión después de pagarle al dueño del equipo y al chofer. */
     public function netoCamion(): float
     {
-        return (float) $this->total - (float) $this->alquiler_monto;
+        return (float) $this->total - (float) $this->alquiler_monto - (float) $this->comision_monto;
     }
 
     public function esMontoFijo(): bool
