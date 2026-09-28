@@ -122,4 +122,19 @@ class MedioPagoTest extends TestCase
             ->assertOk()
             ->assertSee('Lo descuenta el cliente');
     }
+
+    public function test_los_medios_de_pago_estan_en_catalogos_y_no_hay_prestamos(): void
+    {
+        $this->actingAs($this->usuario)
+            ->get(route('viajes.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['Catálogos', 'Medios de pago'])
+            ->assertDontSee('Préstamos');
+
+        // Estando en medios de pago, lo marcado en la barra es Catálogos.
+        $this->actingAs($this->usuario)
+            ->get(route('medios-pago.index'))
+            ->assertOk()
+            ->assertSee('bg-gray-100 font-medium text-blue-700', false);
+    }
 }

@@ -73,11 +73,6 @@ class MedioPago extends Model
         return $this->hasMany(Mantenimiento::class);
     }
 
-    public function prestamos()
-    {
-        return $this->hasMany(Prestamo::class);
-    }
-
     /**
      * Calcula la fecha en que se va a cobrar un gasto pagado con este medio.
      *

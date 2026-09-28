@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Combustible;
 use App\Models\Mantenimiento;
-use App\Models\Cuota;
 use App\Models\Equipo;
 use App\Models\Chofer;
 use Carbon\Carbon;
@@ -14,7 +13,6 @@ class PagoController extends Controller
     public function index()
     {
         $hoy = Carbon::today();
-        $inicioMesActual = $hoy->copy()->startOfMonth();
         $mesProximoKey = $hoy->copy()->startOfMonth()->addMonth()->format('Y-m');
         $mesActualKey = $hoy->format('Y-m');
 
@@ -33,7 +31,6 @@ class PagoController extends Controller
                 'detalle' => $c->lugar ?: 'Carga de combustible',
                 'medio'   => $c->medioPago?->nombre ?? 'Sin medio',
                 'monto'   => (float) $c->total,
-                'tipo'    => 'gasto',
             ]);
         }
 
@@ -49,35 +46,12 @@ class PagoController extends Controller
                 'detalle' => Mantenimiento::$tipos[$m->tipo] ?? $m->tipo,
                 'medio'   => $m->medioPago?->nombre ?? 'Sin medio',
                 'monto'   => (float) $m->monto,
-                'tipo'    => 'gasto',
             ]);
         }
-
-        // --- Cuotas de préstamos impagas ---
-        $cuotas = Cuota::with('prestamo.medioPago')->where('pagada', false)->get();
-
-        $items = collect();
-        foreach ($cuotas as $cuota) {
-            $items->push([
-                'fecha'   => $cuota->fecha_venc,
-                'origen'  => 'Préstamo',
-                'detalle' => $cuota->prestamo->descripcion . ' (cuota ' . $cuota->numero . '/' . $cuota->prestamo->cantidad_cuotas . ')',
-                'medio'   => $cuota->prestamo->medioPago?->nombre ?? '—',
-                'monto'   => (float) $cuota->monto,
-                'tipo'    => 'cuota',
-            ]);
-        }
-        $items = $items->concat($gastos);
-
-        // --- Atrasado: obligaciones con fecha anterior a hoy y aún no pagadas ---
-        // (cuotas impagas vencidas; los gastos a crédito ya cobrados se excluyen abajo)
-        $atrasado = $items->filter(fn ($i) => $i['tipo'] === 'cuota' && $i['fecha']->lt($hoy))
-            ->sortBy(fn ($i) => $i['fecha']->timestamp)
-            ->values();
-        $totalAtrasado = $atrasado->sum('monto');
 
         // --- Por mes, desde hoy en adelante ---
-        $futuros = $items->filter(fn ($i) => $i['fecha']->gte($hoy));
+        // Lo que venció antes de hoy ya se cobró con el resumen de la tarjeta.
+        $futuros = $gastos->filter(fn ($i) => $i['fecha']->gte($hoy));
 
         $meses = $futuros
             ->sortBy(fn ($i) => $i['fecha']->timestamp)
@@ -120,6 +94,6 @@ class PagoController extends Controller
             ->filter(fn ($chofer) => $chofer->comisiones > 0 || $chofer->adelantos > 0 || $chofer->gastos > 0)
             ->values();
 
-        return view('pagos.index', compact('meses', 'atrasado', 'totalAtrasado', 'totalProximoMes', 'mesProximoKey', 'alquileres', 'choferes'));
+        return view('pagos.index', compact('meses', 'totalProximoMes', 'mesProximoKey', 'alquileres', 'choferes'));
     }
 }

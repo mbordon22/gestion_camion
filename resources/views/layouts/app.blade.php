@@ -76,6 +76,7 @@
         ['ruta' => 'tarifas.index', 'patron' => 'tarifas.*', 'texto' => 'Tarifas'],
         ['ruta' => 'camiones.index', 'patron' => 'camiones.*', 'texto' => 'Camiones'],
         ['ruta' => 'equipos.index', 'patron' => 'equipos.*', 'texto' => 'Equipos'],
+        ['ruta' => 'medios-pago.index', 'patron' => 'medios-pago.*', 'texto' => 'Medios de pago'],
     ];
 
     $enCatalogos = collect($catalogos)->contains(fn ($c) => request()->routeIs($c['patron']));
@@ -121,14 +122,9 @@
                           {{ request()->routeIs('mantenimiento.*') ? 'bg-blue-900' : '' }}">
                     Mantenimiento
                 </a>
-                <a href="{{ route('prestamos.index') }}"
-                   class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
-                          {{ request()->routeIs('prestamos.*') ? 'bg-blue-900' : '' }}">
-                    Préstamos
-                </a>
                 <a href="{{ route('pagos.index') }}"
                    class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
-                          {{ request()->routeIs('pagos.*') || request()->routeIs('medios-pago.*') ? 'bg-blue-900' : '' }}">
+                          {{ request()->routeIs('pagos.*') ? 'bg-blue-900' : '' }}">
                     Pagos
                 </a>
                 <a href="{{ route('reportes.index') }}"
@@ -201,14 +197,9 @@
                       {{ request()->routeIs('mantenimiento.*') ? 'bg-blue-900' : '' }}">
                 Mantenimiento
             </a>
-            <a href="{{ route('prestamos.index') }}"
-               class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
-                      {{ request()->routeIs('prestamos.*') ? 'bg-blue-900' : '' }}">
-                Préstamos
-            </a>
             <a href="{{ route('pagos.index') }}"
                class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
-                      {{ request()->routeIs('pagos.*') || request()->routeIs('medios-pago.*') ? 'bg-blue-900' : '' }}">
+                      {{ request()->routeIs('pagos.*') ? 'bg-blue-900' : '' }}">
                 Pagos
             </a>
             <a href="{{ route('reportes.index') }}"

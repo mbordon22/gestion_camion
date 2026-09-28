@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\MedioPago;
 use App\Models\Combustible;
 use App\Models\Mantenimiento;
-use App\Models\Prestamo;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -48,13 +47,12 @@ class MedioPagoController extends Controller
     public function destroy(MedioPago $medioPago)
     {
         $enUso = Combustible::where('medio_pago_id', $medioPago->id)->exists()
-            || Mantenimiento::where('medio_pago_id', $medioPago->id)->exists()
-            || Prestamo::where('medio_pago_id', $medioPago->id)->exists();
+            || Mantenimiento::where('medio_pago_id', $medioPago->id)->exists();
 
         if ($enUso) {
             $medioPago->update(['activo' => false]);
             return redirect()->route('medios-pago.index')
-                ->with('success', 'El medio se usó en gastos o préstamos: se desactivó en lugar de borrarse.');
+                ->with('success', 'El medio se usó en gastos: se desactivó en lugar de borrarse.');
         }
 
         $medioPago->delete();

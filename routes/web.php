@@ -14,7 +14,6 @@ use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\MedioPagoController;
-use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ProfileController;
 
@@ -56,9 +55,6 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('medios-pago', MedioPagoController::class)->except(['show'])
         ->parameters(['medios-pago' => 'medioPago']);
-
-    Route::resource('prestamos', PrestamoController::class)->except(['show']);
-    Route::patch('cuotas/{cuota}/toggle', [PrestamoController::class, 'toggleCuota'])->name('cuotas.toggle');
 
     Route::get('/pagos', [PagoController::class, 'index'])->name('pagos.index');
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');

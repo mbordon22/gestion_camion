@@ -12,9 +12,8 @@
     </svg>
     <div>
         Esta pantalla mide la <strong>rentabilidad</strong>: cuenta los gastos por la <strong>fecha en que se hicieron</strong>,
-        no por cuándo se pagan. Para ver <strong>cuándo sale la plata</strong> (vencimientos de tarjetas y cuotas de préstamos)
+        no por cuándo se pagan. Para ver <strong>cuándo sale la plata</strong> (vencimientos de tarjetas)
         mirá <a href="{{ route('pagos.index') }}" class="font-semibold underline hover:text-amber-900">Pagos</a>.
-        Los préstamos no se cuentan acá para no duplicar gastos.
     </div>
 </div>
 

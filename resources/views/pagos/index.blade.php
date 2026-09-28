@@ -6,7 +6,7 @@
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Pagos / Vencimientos</h1>
-        <p class="text-sm text-gray-500 mt-1">Lo que tenés que pagar: gastos a crédito y cuotas de préstamos.</p>
+        <p class="text-sm text-gray-500 mt-1">Lo que tenés que pagar: gastos a crédito, alquiler de equipos y choferes.</p>
     </div>
     <a href="{{ route('medios-pago.index') }}"
        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded border border-gray-300 transition">
@@ -24,34 +24,6 @@
         ({{ \Carbon\Carbon::createFromFormat('Y-m', $mesProximoKey)->translatedFormat('F Y') }})</p>
     <p class="text-3xl font-bold mt-1">$ {{ number_format($totalProximoMes, 2, ',', '.') }}</p>
 </div>
-
-{{-- Atrasado --}}
-@if($atrasado->isNotEmpty())
-    <div class="bg-red-50 border border-red-300 rounded-lg shadow-sm mb-6 overflow-hidden">
-        <div class="px-5 py-3 border-b border-red-200 flex items-center justify-between">
-            <h2 class="font-semibold text-red-800 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-                Atrasado (cuotas impagas vencidas)
-            </h2>
-            <span class="font-bold text-red-800">$ {{ number_format($totalAtrasado, 2, ',', '.') }}</span>
-        </div>
-        <table class="min-w-full divide-y divide-red-100 text-sm">
-            <tbody class="divide-y divide-red-100">
-                @foreach($atrasado as $item)
-                    <tr>
-                        <td class="px-5 py-2 whitespace-nowrap text-red-700">{{ $item['fecha']->format('d/m/Y') }}</td>
-                        <td class="px-5 py-2 text-gray-700">{{ $item['detalle'] }}</td>
-                        <td class="px-5 py-2 text-gray-500">{{ $item['medio'] }}</td>
-                        <td class="px-5 py-2 text-right font-medium text-red-800">$ {{ number_format($item['monto'], 2, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-@endif
 
 {{-- Dueños de equipos alquilados --}}
 @if($alquileres->isNotEmpty())
@@ -122,7 +94,7 @@
 @if($meses->isEmpty())
     <div class="bg-white rounded-lg shadow text-center py-12 text-gray-500">
         <p>No hay pagos pendientes de aquí en adelante.</p>
-        <p class="text-sm mt-1">Los gastos a crédito y las cuotas de préstamos aparecen acá según su fecha de cobro.</p>
+        <p class="text-sm mt-1">Los gastos a crédito aparecen acá según su fecha de cobro.</p>
     </div>
 @else
     <div class="space-y-5">
@@ -157,8 +129,7 @@
                                     <td class="px-5 py-2 whitespace-nowrap text-gray-700">{{ $item['fecha']->format('d/m/Y') }}</td>
                                     <td class="px-5 py-2 text-gray-700">{{ $item['detalle'] }}</td>
                                     <td class="px-5 py-2">
-                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
-                                            {{ $item['tipo'] === 'cuota' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800' }}">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                             {{ $item['origen'] }}
                                         </span>
                                     </td>
