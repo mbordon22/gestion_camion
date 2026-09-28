@@ -6,6 +6,7 @@ use App\Models\Camion;
 use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Destino;
+use App\Models\Producto;
 use App\Models\Viaje;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -183,23 +184,17 @@ class ViajeTest extends TestCase
         $this->assertSame(0, Viaje::count());
     }
 
-    public function test_el_formulario_sugiere_solo_los_productos_ya_cargados(): void
+    public function test_el_formulario_ofrece_solo_los_productos_del_catalogo(): void
     {
-        $camion = $this->camion();
-        Viaje::create([
-            'camion_id'  => $camion->id,
-            'modo_cobro' => 'fijo',
-            'fecha'      => '2026-09-20 18:47',
-            'producto'   => 'Cereal',
-            'total'      => 150000,
-        ]);
+        $this->camion();
+        Producto::create(['nombre' => 'Cereal']);
 
         $this->actingAs($this->usuario())
             ->get(route('viajes.create'))
             ->assertOk()
-            ->assertSee('<option value="Cereal"></option>', false)
-            // Nada fijo de un rubro en particular: sólo lo que ya se llevó.
-            ->assertDontSee('<option value="Vinaza"></option>', false);
+            ->assertSee('<option value="Cereal" data-unidad=""', false)
+            // Nada fijo de un rubro en particular.
+            ->assertDontSee('value="Vinaza"', false);
     }
 
     public function test_los_montos_se_pueden_escribir_con_puntos_y_coma(): void

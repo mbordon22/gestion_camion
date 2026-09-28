@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Producto;
 use App\Models\Tarifa;
 use App\Models\Viaje;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class TarifaController extends Controller
 
     public function edit(Tarifa $tarifa)
     {
-        return view('tarifas.edit', $this->datosDelFormulario() + ['tarifa' => $tarifa]);
+        return view('tarifas.edit', $this->datosDelFormulario($tarifa) + ['tarifa' => $tarifa]);
     }
 
     public function update(Request $request, Tarifa $tarifa)
@@ -130,11 +131,11 @@ class TarifaController extends Controller
         }
     }
 
-    private function datosDelFormulario(): array
+    private function datosDelFormulario(?Tarifa $tarifa = null): array
     {
         return [
             'clientes'  => Cliente::where('activo', true)->orderBy('nombre')->get(),
-            'productos' => Viaje::productosSugeridos(),
+            'productos' => Producto::paraFormulario($tarifa?->producto),
             'unidades'  => Viaje::$unidades,
         ];
     }

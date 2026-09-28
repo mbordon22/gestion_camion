@@ -56,18 +56,6 @@ class Viaje extends Model
         'cabezas'   => 'Cabezas',
     ];
 
-    /**
-     * Sugerencias de producto para el formulario: lo que ya se cargó alguna
-     * vez, para no tipear lo mismo en cada viaje.
-     */
-    public static function productosSugeridos(): array
-    {
-        return static::query()->whereNotNull('producto')->distinct()->pluck('producto')
-            ->sort(SORT_LOCALE_STRING)
-            ->values()
-            ->all();
-    }
-
     public function camion()
     {
         return $this->belongsTo(Camion::class);

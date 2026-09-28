@@ -73,6 +73,7 @@
         ['ruta' => 'clientes.index', 'patron' => 'clientes.*', 'texto' => 'Clientes'],
         ['ruta' => 'choferes.index', 'patron' => 'choferes.*', 'texto' => 'Choferes'],
         ['ruta' => 'destinos.index', 'patron' => 'destinos.*', 'texto' => 'Destinos'],
+        ['ruta' => 'productos.index', 'patron' => 'productos.*', 'texto' => 'Productos'],
         ['ruta' => 'tarifas.index', 'patron' => 'tarifas.*', 'texto' => 'Tarifas'],
         ['ruta' => 'camiones.index', 'patron' => 'camiones.*', 'texto' => 'Camiones'],
         ['ruta' => 'equipos.index', 'patron' => 'equipos.*', 'texto' => 'Equipos'],

@@ -14,6 +14,7 @@ use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\MedioPagoController;
+use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ProfileController;
 
@@ -40,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('choferes', ChoferController::class)->except(['show'])
         ->parameters(['choferes' => 'chofer']);
     Route::resource('destinos', DestinoController::class)->except(['show']);
+    Route::resource('productos', ProductoController::class)->except(['show']);
     Route::get('equipos/{equipo}/pagos', [EquipoController::class, 'pagos'])->name('equipos.pagos');
     Route::post('equipos/{equipo}/pagos', [EquipoController::class, 'registrarPago'])->name('equipos.pagos.store');
     Route::delete('equipos/{equipo}/pagos/{fecha}', [EquipoController::class, 'deshacerPago'])

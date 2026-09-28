@@ -17,17 +17,21 @@
     </div>
 
     <div>
+        {{-- Del catálogo: la tarifa se busca por el nombre, y así no puede quedar escrito distinto que en el viaje. --}}
+        @php $productoActual = old('producto', $tarifa->producto ?? ''); @endphp
         <label class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
-        <input type="text" name="producto" list="tarifa-productos" maxlength="60" placeholder="Vinaza" autocomplete="off"
-               value="{{ old('producto', $tarifa->producto ?? '') }}"
-               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400
-                      @error('producto') border-red-400 @enderror">
-        <datalist id="tarifa-productos">
-            @foreach($productos as $sugerencia)
-                <option value="{{ $sugerencia }}"></option>
+        <select name="producto"
+                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400
+                       @error('producto') border-red-400 @enderror">
+            <option value="">Cualquier carga</option>
+            @foreach($productos as $opcion)
+                <option value="{{ $opcion->nombre }}" {{ $productoActual === $opcion->nombre ? 'selected' : '' }}>{{ $opcion->nombre }}</option>
             @endforeach
-        </datalist>
-        <p class="text-xs text-gray-400 mt-1">Vacío = vale para cualquier carga de ese cliente.</p>
+            @if($productoActual !== '' && ! $productos->contains('nombre', $productoActual))
+                <option value="{{ $productoActual }}" selected>{{ $productoActual }}</option>
+            @endif
+        </select>
+        <p class="text-xs text-gray-400 mt-1">"Cualquier carga" vale para todo lo que le lleves a ese cliente. Los productos se cargan en Catálogos.</p>
         @error('producto') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
 

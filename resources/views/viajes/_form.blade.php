@@ -10,7 +10,16 @@
     $modoActual     = old('modo_cobro', $viaje->modo_cobro ?? ($cobroSugerido['modo'] ?? 'fijo'));
     $unidadActual   = old('unidad', $viaje->unidad ?? ($cobroSugerido['unidad'] ?? null) ?? 'toneladas');
     $unidadEsOtra   = $unidadActual && ! array_key_exists($unidadActual, Viaje::$unidades);
-    $productoActual = old('producto', isset($viaje) ? $viaje->producto : ($cobroSugerido['producto'] ?? ''));
+    $productoActual = (string) old('producto', isset($viaje) ? $viaje->producto : ($cobroSugerido['producto'] ?? ''));
+    $productoEsNuevo = $productoActual === '__nuevo__';
+    // Un viaje viejo puede tener un producto que ya no está en el catálogo:
+    // se ofrece igual para no cambiárselo al guardar. Si sólo era la
+    // sugerencia del último viaje, no hace falta.
+    if ($productoActual !== '' && ! $productoEsNuevo && ! $productos->contains('nombre', $productoActual)
+        && ! (isset($viaje) || old('producto'))) {
+        $productoActual = '';
+    }
+    $productoSuelto = $productoActual !== '' && ! $productoEsNuevo && ! $productos->contains('nombre', $productoActual);
     $cantidadActual = old('cantidad', isset($viaje) ? Viaje::valorCampo($viaje->cantidad) : '');
     $precioActual   = old('precio_unitario', isset($viaje) ? Viaje::valorCampo($viaje->precio_unitario) : '');
     $totalActual    = old('total', isset($viaje) ? Viaje::valorCampo($viaje->total) : '');
@@ -40,7 +49,7 @@
     // precio cerrado es opcional y aparece si ya tiene algo.
     $mostrarCarga = $modoActual === 'cantidad'
         || filled($productoActual) || filled($cantidadActual)
-        || $errors->hasAny(['producto', 'cantidad', 'unidad']);
+        || $errors->hasAny(['producto', 'producto_nuevo', 'cantidad', 'unidad']);
 
     $abrirRuta = $destinoEsNuevo || $errors->hasAny(['origen', 'km_recorridos']);
 
@@ -217,18 +226,30 @@
         </button>
 
         <div id="bloque-carga" class="grid grid-cols-2 sm:grid-cols-3 gap-3 {{ $mostrarCarga ? '' : 'hidden' }}">
-            {{-- Qué se lleva. Texto libre con sugerencias de lo ya cargado. --}}
+            {{--
+                Qué se lleva, del catálogo de productos. Cada opción lleva su
+                unidad habitual, que se completa al elegirlo. "+ Nuevo producto…"
+                lo crea al guardar, como el destino.
+            --}}
             <div class="col-span-2 sm:col-span-1">
                 <label for="producto" class="block text-xs font-medium text-gray-600 mb-1">Producto</label>
-                <input type="text" name="producto" id="producto" list="productos-sugeridos" maxlength="60" placeholder="Ej: cereal, hacienda" autocomplete="off"
-                       value="{{ $productoActual }}"
-                       class="{{ $claseCampo }} bg-white @error('producto') border-red-400 @enderror">
-                <datalist id="productos-sugeridos">
-                    @foreach($productos as $sugerencia)
-                        <option value="{{ $sugerencia }}"></option>
+                <select name="producto" id="producto"
+                        class="{{ $claseCampo }} bg-white @error('producto') border-red-400 @enderror">
+                    <option value="">Sin producto</option>
+                    @foreach($productos as $opcion)
+                        <option value="{{ $opcion->nombre }}" data-unidad="{{ $opcion->unidad }}"
+                                {{ $productoActual === $opcion->nombre ? 'selected' : '' }}>{{ $opcion->nombre }}</option>
                     @endforeach
-                </datalist>
+                    @if($productoSuelto)
+                        <option value="{{ $productoActual }}" selected>{{ $productoActual }}</option>
+                    @endif
+                    <option value="__nuevo__" {{ $productoEsNuevo ? 'selected' : '' }}>+ Nuevo producto…</option>
+                </select>
+                <input type="text" name="producto_nuevo" id="producto_nuevo" maxlength="60" placeholder="Ej: cereal, hacienda"
+                       value="{{ old('producto_nuevo') }}"
+                       class="{{ $claseCampo }} bg-white mt-2 {{ $productoEsNuevo ? '' : 'hidden' }} @error('producto_nuevo') border-red-400 @enderror">
                 @error('producto') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                @error('producto_nuevo') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -367,6 +388,7 @@
     const selUnidad      = document.getElementById('unidad_opcion');
     const inpUnidad      = document.getElementById('unidad');
     const inpProducto    = document.getElementById('producto');
+    const inpProductoNuevo = document.getElementById('producto_nuevo');
     const inpFecha       = document.getElementById('fecha');
     const marcasCarga    = document.querySelectorAll('.req-carga');
 
@@ -423,8 +445,9 @@
         // lo escribió el usuario y no se pisa.
         if (! esPorCantidad()) return;
 
-        // Sin datos todavía, dejamos el campo vacío en vez de mostrar 0.
-        if (inpCantidad.value.trim() === '' && inpPrecio.value.trim() === '') {
+        // Mientras falte la cantidad o el precio, el campo queda vacío en vez
+        // de mostrar 0 (la tarifa suele completar el precio antes que el peso).
+        if (inpCantidad.value.trim() === '' || inpPrecio.value.trim() === '') {
             inpTotal.value = '';
             mostrarAlquiler();
             return;
@@ -625,8 +648,8 @@
     // --- Cada cliente, como se le cobró la última vez ------------------------
 
     // Sólo al cargar un viaje nuevo: a uno se le cobra por tonelada, a otro un
-    // precio cerrado. El producto se propone si el campo está vacío o si lo
-    // había puesto esto mismo, para no pisar lo que escribió el usuario.
+    // precio cerrado. El producto se propone si no hay ninguno elegido o si lo
+    // había puesto esto mismo, para no pisar lo que eligió el usuario.
     const selClienteBase  = document.getElementById('cliente_id');
     const cobroPorCliente = JSON.parse(selClienteBase.dataset.cobro || '{}');
     let productoPropuesto = inpProducto.value;
@@ -639,8 +662,10 @@
         if (radio) radio.checked = true;
         if (cobro.unidad) elegirUnidad(cobro.unidad);
 
-        if (inpProducto.value.trim() === '' || inpProducto.value === productoPropuesto) {
-            inpProducto.value = cobro.producto || '';
+        if (inpProducto.value === '' || inpProducto.value === productoPropuesto) {
+            // Si ya no está en el catálogo, no se propone.
+            const enCatalogo = [...inpProducto.options].some(o => o.value === cobro.producto);
+            inpProducto.value = enCatalogo ? cobro.producto : '';
             productoPropuesto = inpProducto.value;
             if (inpProducto.value) mostrarCarga();
         }
@@ -713,7 +738,8 @@
 
         const url = new URL(avisoTarifa.dataset.url);
         if (selCliente.value && selCliente.value !== 'nuevo') url.searchParams.set('cliente_id', selCliente.value);
-        if (inpProducto.value.trim()) url.searchParams.set('producto', inpProducto.value.trim());
+        const producto = inpProducto.value === '__nuevo__' ? inpProductoNuevo.value.trim() : inpProducto.value;
+        if (producto) url.searchParams.set('producto', producto);
         if (inpKm.value) url.searchParams.set('km', inpKm.value);
         if (inpFecha.value) url.searchParams.set('fecha', inpFecha.value);
 
@@ -830,7 +856,13 @@
         aplicarUnidad();
         mostrarAvisoTarifa();
     });
-    inpProducto.addEventListener('input', consultarTarifaDemorada);
+    // Cada producto se mide casi siempre igual: al elegirlo se pone su unidad.
+    conectarNuevo('producto', 'producto_nuevo', () => {
+        const unidad = inpProducto.selectedOptions[0]?.dataset.unidad;
+        if (unidad) elegirUnidad(unidad);
+        consultarTarifa(true);
+    }, '__nuevo__');
+    inpProductoNuevo.addEventListener('input', consultarTarifaDemorada);
     inpKm.addEventListener('input', consultarTarifaDemorada);
     inpFecha.addEventListener('change', () => {
         marcarFechaRapida();

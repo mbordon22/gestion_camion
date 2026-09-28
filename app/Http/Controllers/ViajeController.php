@@ -8,6 +8,7 @@ use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Destino;
 use App\Models\Equipo;
+use App\Models\Producto;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -17,11 +18,11 @@ class ViajeController extends Controller
     private const NUEVO = 'nuevo';
 
     /**
-     * Lo mismo para el selector de destino. Ahí las opciones son nombres y no
-     * ids, así que el valor centinela lleva guiones bajos para que no pueda
-     * chocar con un destino que se llame igual.
+     * Lo mismo para los selectores de destino y de producto. Ahí las opciones
+     * son nombres y no ids, así que el valor centinela lleva guiones bajos
+     * para que no pueda chocar con uno que se llame igual.
      */
-    private const DESTINO_NUEVO = '__nuevo__';
+    private const NOMBRE_NUEVO = '__nuevo__';
 
     public function index(Request $request)
     {
@@ -101,7 +102,7 @@ class ViajeController extends Controller
             'choferes'  => $this->choferesParaFormulario($viaje),
             'destinos'  => $this->destinosParaFormulario($viaje),
             'equipos'   => $this->equiposParaFormulario($viaje),
-            'productos' => Viaje::productosSugeridos(),
+            'productos' => Producto::paraFormulario($viaje?->producto),
             // El N° de orden va a la vista sólo para quien ya lo usa; si no,
             // queda en "Más datos".
             'usaOrden'  => Viaje::whereNotNull('nro_orden')->exists(),
@@ -259,7 +260,8 @@ class ViajeController extends Controller
     {
         $clienteNuevo = $request->input('cliente_id') === self::NUEVO;
         $choferNuevo  = $request->input('chofer_id') === self::NUEVO;
-        $destinoNuevo = $request->input('destino') === self::DESTINO_NUEVO;
+        $destinoNuevo = $request->input('destino') === self::NOMBRE_NUEVO;
+        $productoNuevo = $request->input('producto') === self::NOMBRE_NUEVO;
 
         // Los montos llegan como los escribe cualquiera: "150.000", "27,7".
         foreach (['cantidad', 'precio_unitario', 'total'] as $campo) {
@@ -279,6 +281,7 @@ class ViajeController extends Controller
             'fecha_carga'     => 'nullable|date',
             'nro_orden'       => 'nullable|string|max:30',
             'producto'        => 'nullable|string|max:60',
+            'producto_nuevo'  => $productoNuevo ? 'required|string|max:60' : 'nullable',
             'cantidad'        => 'required_if:modo_cobro,cantidad|nullable|numeric|min:0.01',
             'unidad'          => 'required_if:modo_cobro,cantidad|required_with:cantidad|nullable|string|max:20',
             'precio_unitario' => 'required_if:modo_cobro,cantidad|nullable|numeric|min:0',
@@ -346,6 +349,16 @@ class ViajeController extends Controller
             $validated['liquidacion_id'] = null;
         }
 
+        // El producto nuevo queda en el catálogo, con la unidad de este viaje
+        // como la habitual. Si ya existía escrito distinto ("vinaza"), se usa
+        // el del catálogo: la tarifa se busca por ese nombre.
+        if ($productoNuevo) {
+            $validated['producto'] = Producto::firstOrCreate(
+                ['nombre' => trim($validated['producto_nuevo'])],
+                ['unidad' => $validated['unidad'] ?? null, 'activo' => true]
+            )->nombre;
+        }
+
         // El destino nuevo se guarda además en el catálogo, con el origen y los
         // km de este viaje, para que el próximo los complete solo. Va después
         // del cliente porque queda asociado a él.
@@ -362,7 +375,10 @@ class ViajeController extends Controller
             );
         }
 
-        unset($validated['cliente_nuevo'], $validated['chofer_nuevo'], $validated['destino_nuevo'], $validated['hora']);
+        unset(
+            $validated['cliente_nuevo'], $validated['chofer_nuevo'], $validated['destino_nuevo'],
+            $validated['producto_nuevo'], $validated['hora']
+        );
 
         return $validated;
     }
