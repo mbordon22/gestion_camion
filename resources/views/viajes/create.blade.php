@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
-@php $repitiendo = isset($viaje); @endphp
+@php
+    $desdeSimulacion = $desdeSimulacion ?? false;
+    $repitiendo = isset($viaje) && ! $desdeSimulacion;
+@endphp
 
 @section('title', $repitiendo ? 'Repetir Viaje' : 'Nuevo Viaje')
 
@@ -15,7 +18,12 @@
         <h1 class="text-2xl font-bold text-gray-800">{{ $repitiendo ? 'Repetir Viaje' : 'Nuevo Viaje' }}</h1>
     </div>
 
-    @if($repitiendo)
+    @if($desdeSimulacion)
+        <div class="mb-5 rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            <p class="font-semibold">Viene del simulador: ya están el cliente, la carga, el precio y la ruta.</p>
+            <p class="mt-1 text-blue-800">Revisá la fecha y completá lo que trae el ticket: el número de orden y el peso real.</p>
+        </div>
+    @elseif($repitiendo)
         <div class="mb-5 rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
             <p class="font-semibold">Ya vienen cargados el camión, el cliente, el chofer, la carga y la ruta{{ $viaje->destino ? ' a ' . $viaje->destino : '' }}.</p>
             <p class="mt-1 text-blue-800">Falta lo que trae el ticket: el número de orden y el peso. Revisá que la fecha sea la correcta.</p>

@@ -92,6 +92,7 @@ return [
         'origen' => 'origen',
         'destino' => 'destino',
         'km_recorridos' => 'km recorridos',
+        'consumo_cada_100km' => 'consumo',
         'tipo' => 'tipo',
         'dia_vencimiento' => 'día de vencimiento',
         'medio_pago_id' => 'medio de pago',

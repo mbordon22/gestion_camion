@@ -220,6 +220,11 @@
                           {{ request()->routeIs('viajes.*') ? 'bg-blue-900' : '' }}">
                     Viajes
                 </a>
+                <a href="{{ route('simulador.index') }}"
+                   class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
+                          {{ request()->routeIs('simulador.*') ? 'bg-blue-900' : '' }}">
+                    Simular viaje
+                </a>
                 <a href="{{ route('combustible.index') }}"
                    class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
                           {{ request()->routeIs('combustible.*') ? 'bg-blue-900' : '' }}">
@@ -294,6 +299,11 @@
                class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
                       {{ request()->routeIs('viajes.*') ? 'bg-blue-900' : '' }}">
                 Viajes
+            </a>
+            <a href="{{ route('simulador.index') }}"
+               class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
+                      {{ request()->routeIs('simulador.*') ? 'bg-blue-900' : '' }}">
+                Simular viaje
             </a>
             <a href="{{ route('combustible.index') }}"
                class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800

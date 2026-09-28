@@ -46,6 +46,16 @@
         @error('anio') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
 
+    <div>
+        <label for="consumo_cada_100km" class="block text-sm font-medium text-gray-700 mb-1">Consumo (litros cada 100 km)</label>
+        <input type="text" inputmode="decimal" name="consumo_cada_100km" id="consumo_cada_100km" placeholder="Ej: 35"
+               value="{{ old('consumo_cada_100km', isset($camion) && $camion->consumo_cada_100km !== null ? \App\Models\Viaje::valorCampo($camion->consumo_cada_100km) : '') }}"
+               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400
+                      @error('consumo_cada_100km') border-red-400 @enderror">
+        <p class="text-xs text-gray-400 mt-1">Opcional. Lo usa el simulador de viajes para calcular el gasoil.</p>
+        @error('consumo_cada_100km') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+    </div>
+
     <div class="sm:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
         <textarea name="observaciones" rows="3" placeholder="Notas sobre el camión..."

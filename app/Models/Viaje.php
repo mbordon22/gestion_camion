@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Numero;
 use Illuminate\Database\Eloquent\Model;
 
 class Viaje extends Model
@@ -161,15 +162,7 @@ class Viaje extends Model
      */
     public static function valorCampo($numero): string
     {
-        if ($numero === null || $numero === '') {
-            return '';
-        }
-
-        $numero = (float) $numero;
-
-        return fmod($numero, 1) === 0.0
-            ? number_format($numero, 0, ',', '.')
-            : rtrim(number_format($numero, 2, ',', '.'), '0');
+        return Numero::texto($numero);
     }
 
     /** La etiqueta de la unidad, en minúscula, o el texto libre que se haya cargado. */

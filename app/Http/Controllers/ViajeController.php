@@ -9,6 +9,7 @@ use App\Models\Cliente;
 use App\Models\Destino;
 use App\Models\Equipo;
 use App\Models\Producto;
+use App\Support\Numero;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -73,6 +74,13 @@ class ViajeController extends Controller
         // está guardado se envía igual a store().
         $viaje = $this->viajeParaRepetir($request->integer('repetir'));
 
+        // Con ?simulacion=1 viene del simulador ("Cargar como viaje"): arranca
+        // con lo que se simuló.
+        $desdeSimulacion = ! $viaje && $request->boolean('simulacion');
+        if ($desdeSimulacion) {
+            $viaje = $this->viajeDesdeSimulacion($request);
+        }
+
         // Casi siempre se trabaja para el mismo cliente, con el mismo chofer y
         // el mismo equipo enganchado: vienen elegidos los del último viaje. Al
         // repetir no hacen falta, porque ya vienen los del viaje que se repite.
@@ -89,8 +97,42 @@ class ViajeController extends Controller
 
         return view('viajes.create', $this->datosFormulario($viaje) + compact(
             'viaje', 'ultimo', 'clienteSugerido', 'choferSugerido', 'equipoSugerido',
-            'cobroPorCliente', 'cobroSugerido'
+            'cobroPorCliente', 'cobroSugerido', 'desdeSimulacion'
         ));
+    }
+
+    /**
+     * Un viaje sin guardar con lo que se cargó en el simulador. Lo que no
+     * sea de este sistema (un id que no existe, un número que no se entiende)
+     * se descarta: el formulario lo pide de nuevo.
+     */
+    private function viajeDesdeSimulacion(Request $request): Viaje
+    {
+        $id = fn (string $campo, string $modelo) => $modelo::whereKey($request->integer($campo))->exists() ? $request->integer($campo) : null;
+        $modo = $request->input('modo_cobro') === 'fijo' ? 'fijo' : 'cantidad';
+        $destino = trim((string) $request->input('destino')) ?: null;
+
+        $viaje = new Viaje([
+            'camion_id'       => $id('camion_id', Camion::class),
+            'cliente_id'      => $id('cliente_id', Cliente::class),
+            'chofer_id'       => $id('chofer_id', Chofer::class),
+            'equipo_id'       => $id('equipo_id', Equipo::class),
+            'modo_cobro'      => $modo,
+            'producto'        => trim((string) $request->input('producto')) ?: null,
+            'cantidad'        => $modo === 'cantidad' ? Numero::aFloat($request->input('cantidad')) : null,
+            'unidad'          => trim((string) $request->input('unidad')) ?: null,
+            'precio_unitario' => $modo === 'cantidad' ? Numero::aFloat($request->input('precio_unitario')) : null,
+            'total'           => $modo === 'fijo' ? Numero::aFloat($request->input('total')) : null,
+            'destino'         => $destino,
+            // El origen, del destino del catálogo si lo tiene.
+            'origen'          => $destino ? Destino::where('nombre', $destino)->value('origen') : null,
+            'km_recorridos'   => ($km = Numero::aFloat($request->input('km_recorridos'))) !== null ? (int) round($km) : null,
+        ]);
+
+        $viaje->fecha = today();
+        $viaje->cobrado = false;
+
+        return $viaje;
     }
 
     /** Lo que necesita el formulario, sea para cargar un viaje o para editarlo. */
@@ -265,7 +307,7 @@ class ViajeController extends Controller
 
         // Los montos llegan como los escribe cualquiera: "150.000", "27,7".
         foreach (['cantidad', 'precio_unitario', 'total'] as $campo) {
-            $request->merge([$campo => $this->numero($request->input($campo))]);
+            $request->merge([$campo => Numero::leer($request->input($campo))]);
         }
 
         $validated = $request->validate([
@@ -381,38 +423,6 @@ class ViajeController extends Controller
         );
 
         return $validated;
-    }
-
-    /**
-     * Un número escrito a mano, pasado a lo que entiende la validación.
-     *
-     * Con coma se lee en criollo: la coma es el decimal y los puntos separan
-     * los miles ("1.500,50"). Sin coma, el punto es decimal ("27.7"), salvo
-     * que agrupe de a tres cifras ("150.000"), que es como se escribe un
-     * monto redondo. Lo que no se pueda leer se deja como vino, para que la
-     * validación lo rechace.
-     */
-    private function numero(mixed $valor): mixed
-    {
-        if (! is_string($valor)) {
-            return $valor;
-        }
-
-        $texto = str_replace(['$', ' '], '', trim($valor));
-
-        if ($texto === '') {
-            return null;
-        }
-
-        if (str_contains($texto, ',')) {
-            return str_replace(['.', ','], ['', '.'], $texto);
-        }
-
-        if (preg_match('/^\d{1,3}(\.\d{3})+$/', $texto)) {
-            return str_replace('.', '', $texto);
-        }
-
-        return $texto;
     }
 
     /** Los clientes activos, más el del viaje que se edita aunque ya no lo esté. */

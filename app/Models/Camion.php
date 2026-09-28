@@ -11,11 +11,12 @@ class Camion extends Model
     protected $table = 'camiones';
 
     protected $fillable = [
-        'patente', 'marca', 'modelo', 'anio', 'activo', 'observaciones', 'created_at',
+        'patente', 'marca', 'modelo', 'anio', 'consumo_cada_100km', 'activo', 'observaciones', 'created_at',
     ];
 
     protected $casts = [
         'anio' => 'integer',
+        'consumo_cada_100km' => 'decimal:1',
         'activo' => 'boolean',
         'created_at' => 'datetime',
     ];

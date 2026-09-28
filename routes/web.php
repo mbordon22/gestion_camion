@@ -15,6 +15,7 @@ use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\MedioPagoController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\SimuladorController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ProfileController;
 
@@ -49,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('equipos', EquipoController::class)->except(['show']);
     Route::get('tarifas/sugerir', [TarifaController::class, 'sugerir'])->name('tarifas.sugerir');
     Route::resource('tarifas', TarifaController::class)->except(['show']);
+    Route::get('simulador', [SimuladorController::class, 'index'])->name('simulador.index');
+    Route::get('simulador/resultado', [SimuladorController::class, 'resultado'])->name('simulador.resultado');
     Route::get('viajes/buscar-orden', [ViajeController::class, 'buscarPorOrden'])->name('viajes.buscar-orden');
     Route::resource('viajes', ViajeController::class)->except(['show']);
     Route::patch('viajes/{viaje}/cobrado', [ViajeController::class, 'toggleCobrado'])->name('viajes.cobrado');
