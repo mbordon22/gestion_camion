@@ -22,9 +22,24 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         if (in_array(RefreshDatabase::class, class_uses_recursive(static::class), true)) {
-            $this->cuenta = Cuenta::create(['nombre' => 'Cuenta de prueba', 'activa' => true]);
+            // Con todo prendido: cada test de una función la prueba sin tener
+            // que activarla. Los que prueban el sistema simple la apagan.
+            $this->cuenta = Cuenta::create([
+                'nombre'    => 'Cuenta de prueba',
+                'activa'    => true,
+                'funciones' => array_keys(Cuenta::FUNCIONES),
+            ]);
             CuentaActual::porDefecto($this->cuenta->id);
         }
+    }
+
+    /** Apaga funciones de la cuenta de prueba, como desde Configuración. */
+    protected function apagar(string ...$funciones): void
+    {
+        $this->cuenta->update(['funciones' => array_values(array_diff($this->cuenta->funciones ?? [], $funciones))]);
+
+        // El usuario logueado pudo haber cargado su cuenta en un pedido anterior.
+        auth()->user()?->unsetRelation('cuenta');
     }
 
     protected function tearDown(): void

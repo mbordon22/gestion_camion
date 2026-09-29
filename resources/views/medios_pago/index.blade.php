@@ -5,11 +5,13 @@
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
     <div class="flex items-center gap-3">
-        <a href="{{ route('pagos.index') }}" class="text-blue-600 hover:text-blue-800">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-        </a>
+        @usa('tarjetas')
+            <a href="{{ route('pagos.index') }}" class="text-blue-600 hover:text-blue-800" aria-label="Volver a Pagos">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+        @endusa
         <h1 class="text-2xl font-bold text-gray-800">Medios de Pago</h1>
     </div>
     <a href="{{ route('medios-pago.create') }}"
@@ -33,8 +35,10 @@
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Nombre</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Tipo</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Día cierre</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Día venc.</th>
+                        @usa('tarjetas')
+                            <th class="px-4 py-3 text-right font-semibold text-gray-600">Día cierre</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-600">Día venc.</th>
+                        @endusa
                         <th class="px-4 py-3 text-center font-semibold text-gray-600">Estado</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
                     </tr>
@@ -53,8 +57,10 @@
                                     {{ \App\Models\MedioPago::$tipos[$medio->tipo] ?? $medio->tipo }}
                                 </span>
                             </td>
-                            <td class="t-dato {{ $medio->dia_cierre ? '' : 't-ocultar' }} px-4 py-3 text-right text-gray-700"><span class="sm:hidden">cierra el</span> {{ $medio->dia_cierre ?? '—' }}</td>
-                            <td class="t-dato {{ $medio->dia_vencimiento ? '' : 't-ocultar' }} px-4 py-3 text-right text-gray-700"><span class="sm:hidden">vence el</span> {{ $medio->dia_vencimiento ?? '—' }}</td>
+                            @usa('tarjetas')
+                                <td class="t-dato {{ $medio->dia_cierre ? '' : 't-ocultar' }} px-4 py-3 text-right text-gray-700"><span class="sm:hidden">cierra el</span> {{ $medio->dia_cierre ?? '—' }}</td>
+                                <td class="t-dato {{ $medio->dia_vencimiento ? '' : 't-ocultar' }} px-4 py-3 text-right text-gray-700"><span class="sm:hidden">vence el</span> {{ $medio->dia_vencimiento ?? '—' }}</td>
+                            @endusa
                             <td class="t-dato {{ $medio->activo ? 't-ocultar' : '' }} px-4 py-3 text-center">
                                 @if($medio->activo)
                                     <span class="inline-flex px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">Activo</span>

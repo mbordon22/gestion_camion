@@ -176,16 +176,21 @@
 @php
     // Lo que se carga una vez y después sólo se elige al cargar un viaje o un
     // gasto. Van juntos en un desplegable para que la barra no se desborde.
-    $catalogos = [
+    // Tarifas y Equipos, sólo si la cuenta los usa (Cuenta::FUNCIONES).
+    $catalogos = array_values(array_filter([
         ['ruta' => 'clientes.index', 'patron' => 'clientes.*', 'texto' => 'Clientes'],
         ['ruta' => 'choferes.index', 'patron' => 'choferes.*', 'texto' => 'Choferes'],
         ['ruta' => 'destinos.index', 'patron' => 'destinos.*', 'texto' => 'Destinos'],
         ['ruta' => 'productos.index', 'patron' => 'productos.*', 'texto' => 'Productos'],
-        ['ruta' => 'tarifas.index', 'patron' => 'tarifas.*', 'texto' => 'Tarifas'],
+        ['ruta' => 'tarifas.index', 'patron' => 'tarifas.*', 'texto' => 'Tarifas', 'funcion' => 'tarifas'],
         ['ruta' => 'camiones.index', 'patron' => 'camiones.*', 'texto' => 'Camiones'],
-        ['ruta' => 'equipos.index', 'patron' => 'equipos.*', 'texto' => 'Equipos'],
+        ['ruta' => 'equipos.index', 'patron' => 'equipos.*', 'texto' => 'Equipos', 'funcion' => 'equipos'],
         ['ruta' => 'medios-pago.index', 'patron' => 'medios-pago.*', 'texto' => 'Medios de pago'],
-    ];
+    ], fn ($c) => ! isset($c['funcion']) || \App\Support\CuentaActual::usa($c['funcion'])));
+
+    // Pagos junta lo que se paga después: tarjetas, dueños de equipos y
+    // choferes. Sin ninguna de esas, no hay nada que mostrar ahí.
+    $conPagos = \App\Support\CuentaActual::usa('tarjetas', 'equipos', 'comisiones');
 
     $enCatalogos = collect($catalogos)->contains(fn ($c) => request()->routeIs($c['patron']));
 @endphp
@@ -235,11 +240,13 @@
                           {{ request()->routeIs('mantenimiento.*') ? 'bg-blue-900' : '' }}">
                     Mantenimiento
                 </a>
-                <a href="{{ route('pagos.index') }}"
-                   class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
-                          {{ request()->routeIs('pagos.*') ? 'bg-blue-900' : '' }}">
-                    Pagos
-                </a>
+                @if($conPagos)
+                    <a href="{{ route('pagos.index') }}"
+                       class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
+                              {{ request()->routeIs('pagos.*') ? 'bg-blue-900' : '' }}">
+                        Pagos
+                    </a>
+                @endif
                 <a href="{{ route('reportes.index') }}"
                    class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
                           {{ request()->routeIs('reportes.*') ? 'bg-blue-900' : '' }}">
@@ -276,6 +283,13 @@
                             Cuentas
                         </a>
                     @endif
+                    <a href="{{ route('configuracion.edit') }}" title="Configuración" aria-label="Configuración"
+                       class="p-2 rounded hover:bg-blue-800 transition {{ request()->routeIs('configuracion.*') ? 'bg-blue-900' : '' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </a>
                     <a href="{{ route('profile.edit') }}"
                        class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition flex items-center gap-1.5
                               {{ request()->routeIs('profile.*') ? 'bg-blue-900' : '' }}">
@@ -322,11 +336,13 @@
                       {{ request()->routeIs('mantenimiento.*') ? 'bg-blue-900' : '' }}">
                 Mantenimiento
             </a>
-            <a href="{{ route('pagos.index') }}"
-               class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
-                      {{ request()->routeIs('pagos.*') ? 'bg-blue-900' : '' }}">
-                Pagos
-            </a>
+            @if($conPagos)
+                <a href="{{ route('pagos.index') }}"
+                   class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
+                          {{ request()->routeIs('pagos.*') ? 'bg-blue-900' : '' }}">
+                    Pagos
+                </a>
+            @endif
             <a href="{{ route('reportes.index') }}"
                class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
                       {{ request()->routeIs('reportes.*') ? 'bg-blue-900' : '' }}">
@@ -352,6 +368,11 @@
                             Cuentas de clientes
                         </a>
                     @endif
+                    <a href="{{ route('configuracion.edit') }}"
+                       class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
+                              {{ request()->routeIs('configuracion.*') ? 'bg-blue-900' : '' }}">
+                        Configuración
+                    </a>
                     <a href="{{ route('profile.edit') }}"
                        class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
                               {{ request()->routeIs('profile.*') ? 'bg-blue-900' : '' }}">

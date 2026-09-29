@@ -40,10 +40,11 @@
     $destinoSuelto  = $destinoActual !== '' && ! $destinoEsNuevo
         && ! $destinos->contains('nombre', $destinoActual);
 
-    // Lo que no se usa no estorba: el chofer y el N° de orden quedan a la
-    // vista sólo si ya hay choferes cargados o viajes con orden.
+    // Lo que no se usa no estorba: el chofer queda a la vista sólo si ya hay
+    // choferes cargados. El N° de orden y la tarifa, si la cuenta los usa
+    // (Configuración); si no, no aparecen.
     $choferALaVista = $choferes->isNotEmpty();
-    $ordenALaVista  = $usaOrden;
+    $usaTarifas     = \App\Support\CuentaActual::usa('tarifas');
 
     // La carga (qué y cuánto) se pide siempre al cobrar por cantidad; con
     // precio cerrado es opcional y aparece si ya tiene algo.
@@ -56,7 +57,6 @@
     $abrirMas = filled($horaActual)
         || filled(old('fecha_carga', isset($viaje) ? $viaje->fecha_carga : null))
         || filled(old('observaciones', $viaje->observaciones ?? null))
-        || (! $ordenALaVista && filled(old('nro_orden', $viaje->nro_orden ?? null)))
         || (! $choferALaVista && $choferEsNuevo)
         || $errors->hasAny(['hora', 'fecha_carga', 'observaciones', 'nro_orden', 'chofer_id', 'chofer_nuevo']);
 
@@ -99,7 +99,7 @@
         @error('cliente_nuevo') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
 
-    @if($ordenALaVista)
+    @if($usaOrden)
         @include('viajes._nro_orden')
     @endif
 
@@ -285,7 +285,7 @@
                    value="{{ $precioActual }}"
                    class="{{ $claseCampo }} bg-white @error('precio_unitario') border-red-400 @enderror">
             <p id="aviso-tarifa" role="status" aria-live="polite" class="hidden text-xs mt-1"
-               data-url="{{ route('tarifas.sugerir') }}"></p>
+               data-url="{{ $usaTarifas ? route('tarifas.sugerir') : '' }}"></p>
             @error('precio_unitario') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>
 
@@ -330,7 +330,6 @@
             Más datos
             <span class="font-normal text-gray-500">
                 ({{ collect([
-                    $ordenALaVista ? null : 'N° de orden',
                     $choferALaVista ? null : 'chofer',
                     'hora',
                     'fecha de carga',
@@ -340,10 +339,6 @@
         </summary>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4">
-            @unless($ordenALaVista)
-                @include('viajes._nro_orden')
-            @endunless
-
             @unless($choferALaVista)
                 @include('viajes._chofer')
             @endunless
@@ -729,8 +724,9 @@
         clearTimeout(esperaTarifa);
         const consulta = ++ultimaTarifa;
 
-        // Con precio cerrado no hay precio por unidad que proponer.
-        if (! esPorCantidad()) {
+        // Con precio cerrado no hay precio por unidad que proponer. Sin
+        // tarifas (data-url vacío), tampoco.
+        if (! esPorCantidad() || ! avisoTarifa.dataset.url) {
             tarifaActual = null;
             avisoTarifa.classList.add('hidden');
             return;
@@ -815,6 +811,7 @@
     }
 
     function consultarOrden() {
+        if (! inpOrden) return; // La cuenta no usa N° de orden.
         clearTimeout(esperaOrden);
         const nro = inpOrden.value.trim();
         const consulta = ++ultimaConsulta;
@@ -868,17 +865,17 @@
         marcarFechaRapida();
         consultarTarifaDemorada();
     });
-    inpOrden.addEventListener('input', () => {
+    inpOrden?.addEventListener('input', () => {
         clearTimeout(esperaOrden);
         esperaOrden = setTimeout(consultarOrden, 400);
     });
-    inpOrden.addEventListener('change', consultarOrden);
+    inpOrden?.addEventListener('change', consultarOrden);
 
     marcarFechaRapida();
     actualizarRuta();
     aplicarModo();
     mostrarAlquiler();
     consultarTarifa(false);
-    if (inpOrden.value.trim() !== '') consultarOrden();
+    if (inpOrden?.value.trim()) consultarOrden();
 })();
 </script>

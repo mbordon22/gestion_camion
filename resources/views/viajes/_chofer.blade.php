@@ -10,10 +10,15 @@
             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400
                    @error('chofer_id') border-red-400 @enderror">
         <option value="">Sin chofer</option>
+        @php $usaComisiones = \App\Support\CuentaActual::usa('comisiones'); @endphp
         @foreach($choferes as $opcion)
             @php
                 $grabado = isset($viaje) && $viaje->exists && $viaje->chofer_id === $opcion->id;
-                if ($grabado && $viaje->liquidacion_id) {
+                if (! $usaComisiones) {
+                    // La cuenta no usa comisiones: el aviso del total no las cuenta.
+                    $modalidadChofer = '';
+                    $valorChofer = '';
+                } elseif ($grabado && $viaje->liquidacion_id) {
                     // Ya se le pagó: el monto no se mueve aunque cambie el total.
                     $modalidadChofer = $viaje->comision_monto !== null ? 'fijo_viaje' : '';
                     $valorChofer = $viaje->comision_monto;

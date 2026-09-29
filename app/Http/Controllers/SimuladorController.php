@@ -10,6 +10,7 @@ use App\Models\Destino;
 use App\Models\Equipo;
 use App\Models\Producto;
 use App\Models\Viaje;
+use App\Support\CuentaActual;
 use App\Support\Numero;
 use App\Support\SimulacionViaje;
 use Illuminate\Http\Request;
@@ -36,8 +37,10 @@ class SimuladorController extends Controller
             'clientes'    => Cliente::where('activo', true)->orderBy('nombre')->get(),
             'productos'   => Producto::paraFormulario(),
             'destinos'    => Destino::with('cliente')->where('activo', true)->orderBy('nombre')->get(),
-            'equipos'     => Equipo::where('activo', true)->orderBy('nombre')->get(),
-            'choferes'    => Chofer::where('activo', true)->orderBy('nombre')->get(),
+            // El equipo y el chofer sólo cambian la cuenta si hay alquiler o
+            // comisión: si la cuenta no los usa (Configuración), no se piden.
+            'equipos'     => CuentaActual::usa('equipos') ? Equipo::where('activo', true)->orderBy('nombre')->get() : collect(),
+            'choferes'    => CuentaActual::usa('comisiones') ? Chofer::where('activo', true)->orderBy('nombre')->get() : collect(),
             'ultimoLitro' => $this->ultimaCarga($camiones->firstWhere('id', $valores['camion_id'])),
         ]);
     }
@@ -106,8 +109,8 @@ class SimuladorController extends Controller
             totalFijo: Numero::aFloat($valores['total']),
             consumo: Numero::aFloat($valores['consumo']),
             precioLitro: Numero::aFloat($valores['precio_litro']),
-            equipo: $valores['equipo_id'] ? Equipo::find($valores['equipo_id']) : null,
-            chofer: $valores['chofer_id'] ? Chofer::find($valores['chofer_id']) : null,
+            equipo: $valores['equipo_id'] && CuentaActual::usa('equipos') ? Equipo::find($valores['equipo_id']) : null,
+            chofer: $valores['chofer_id'] && CuentaActual::usa('comisiones') ? Chofer::find($valores['chofer_id']) : null,
             peajes: max(0, Numero::aFloat($valores['peajes']) ?? 0),
             viaticos: max(0, Numero::aFloat($valores['viaticos']) ?? 0),
             otros: max(0, Numero::aFloat($valores['otros']) ?? 0),

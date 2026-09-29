@@ -6,8 +6,18 @@
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Pagos / Vencimientos</h1>
-        <p class="text-sm text-gray-500 mt-1">Lo que tenés que pagar: gastos a crédito, alquiler de equipos y choferes.</p>
+        @php
+            $queSePaga = collect([
+                \App\Support\CuentaActual::usa('tarjetas') ? 'gastos con tarjeta' : null,
+                \App\Support\CuentaActual::usa('equipos') ? 'alquiler de equipos' : null,
+                \App\Support\CuentaActual::usa('comisiones') ? 'choferes' : null,
+            ])->filter()->values();
+        @endphp
+        <p class="text-sm text-gray-500 mt-1">
+            Lo que tenés que pagar{{ $queSePaga->isNotEmpty() ? ': ' . $queSePaga->join(', ', ' y ') : '' }}.
+        </p>
     </div>
+    @if($conTarjetas)
     <a href="{{ route('medios-pago.index') }}"
        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded border border-gray-300 transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -16,14 +26,17 @@
         </svg>
         Configurar medios
     </a>
+    @endif
 </div>
 
 {{-- Destacado: mes que viene --}}
+@if($conTarjetas)
 <div class="bg-blue-600 text-white rounded-lg shadow p-5 mb-6">
     <p class="text-sm text-blue-100 uppercase tracking-wide">A pagar el mes que viene
         ({{ \Carbon\Carbon::createFromFormat('Y-m', $mesProximoKey)->translatedFormat('F Y') }})</p>
     <p class="text-3xl font-bold mt-1">$ {{ number_format($totalProximoMes, 2, ',', '.') }}</p>
 </div>
+@endif
 
 {{-- Dueños de equipos alquilados --}}
 @if($alquileres->isNotEmpty())
@@ -90,8 +103,14 @@
     </div>
 @endif
 
-{{-- Meses --}}
-@if($meses->isEmpty())
+{{-- Meses: los gastos con tarjeta, según cuándo se pagan --}}
+@if(! $conTarjetas)
+    @if($alquileres->isEmpty() && $choferes->isEmpty())
+        <div class="bg-white rounded-lg shadow text-center py-12 text-gray-500">
+            <p>No tenés nada pendiente de pagar.</p>
+        </div>
+    @endif
+@elseif($meses->isEmpty())
     <div class="bg-white rounded-lg shadow text-center py-12 text-gray-500">
         <p>No hay pagos pendientes de aquí en adelante.</p>
         <p class="text-sm mt-1">Los gastos a crédito aparecen acá según su fecha de cobro.</p>

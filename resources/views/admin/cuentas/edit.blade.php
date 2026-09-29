@@ -69,6 +69,11 @@
             </p>
             @error('activa') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>
+        <div class="border-t border-gray-100 pt-4">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Qué usa</h2>
+            <p class="text-xs text-gray-400 mt-1">Lo mismo que ve en su Configuración: lo apagado no le aparece.</p>
+            @include('partials._funciones', ['elegidas' => $cuenta->funciones ?? []])
+        </div>
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded shadow transition">
             Guardar
         </button>

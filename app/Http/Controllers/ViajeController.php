@@ -144,11 +144,10 @@ class ViajeController extends Controller
             'clientes'  => $this->clientesParaFormulario($viaje),
             'choferes'  => $this->choferesParaFormulario($viaje),
             'destinos'  => $this->destinosParaFormulario($viaje),
-            'equipos'   => $this->equiposParaFormulario($viaje),
+            // Lo avanzado, sólo si la cuenta lo usa (Configuración).
+            'equipos'   => CuentaActual::usa('equipos') ? $this->equiposParaFormulario($viaje) : collect(),
             'productos' => Producto::paraFormulario($viaje?->producto),
-            // El N° de orden va a la vista sólo para quien ya lo usa; si no,
-            // queda en "Más datos".
-            'usaOrden'  => Viaje::whereNotNull('nro_orden')->exists(),
+            'usaOrden'  => CuentaActual::usa('orden'),
         ];
     }
 
@@ -357,16 +356,26 @@ class ViajeController extends Controller
 
         $validated['cobrado'] = $request->boolean('cobrado');
 
-        $equipo = isset($validated['equipo_id']) ? Equipo::find($validated['equipo_id']) : null;
+        // Lo que la cuenta no usa (Configuración) no está en el formulario: lo
+        // que el viaje ya tenía grabado queda como estaba.
+        if (! CuentaActual::usa('orden')) {
+            unset($validated['nro_orden']);
+        }
 
-        $validated = array_merge($validated, $equipo
-            ? $equipo->alquilerDe((float) $validated['total'], $anterior)
-            : ['alquiler_porcentaje' => null, 'alquiler_monto' => null]);
+        if (CuentaActual::usa('equipos')) {
+            $equipo = isset($validated['equipo_id']) ? Equipo::find($validated['equipo_id']) : null;
 
-        // Si cambió el equipo, lo que se le haya pagado al dueño anterior ya
-        // no corresponde a este viaje.
-        if (! $validated['alquiler_monto'] || $anterior?->equipo_id !== $equipo?->id) {
-            $validated['alquiler_pagado_el'] = null;
+            $validated = array_merge($validated, $equipo
+                ? $equipo->alquilerDe((float) $validated['total'], $anterior)
+                : ['alquiler_porcentaje' => null, 'alquiler_monto' => null]);
+
+            // Si cambió el equipo, lo que se le haya pagado al dueño anterior ya
+            // no corresponde a este viaje.
+            if (! $validated['alquiler_monto'] || $anterior?->equipo_id !== $equipo?->id) {
+                $validated['alquiler_pagado_el'] = null;
+            }
+        } else {
+            unset($validated['equipo_id']);
         }
 
         // Alta de cliente y de chofer desde el mismo formulario. Si ya existía uno
@@ -383,9 +392,16 @@ class ViajeController extends Controller
         // al vuelo porque necesita saber quién es el chofer.
         $chofer = isset($validated['chofer_id']) ? Chofer::find($validated['chofer_id']) : null;
 
-        $validated = array_merge($validated, $chofer
-            ? $chofer->comisionDe((float) $validated['total'], $anterior)
-            : ['comision_porcentaje' => null, 'comision_monto' => null]);
+        if (CuentaActual::usa('comisiones')) {
+            $validated = array_merge($validated, $chofer
+                ? $chofer->comisionDe((float) $validated['total'], $anterior)
+                : ['comision_porcentaje' => null, 'comision_monto' => null]);
+        } elseif (! $anterior || $anterior->chofer_id !== $chofer?->id) {
+            // Sin comisiones no se calcula ninguna. Un viaje viejo conserva la
+            // suya, salvo que cambie de chofer: ésa era del anterior.
+            $validated['comision_porcentaje'] = null;
+            $validated['comision_monto'] = null;
+        }
 
         // Si cambió el chofer, el viaje sale de la liquidación del anterior.
         if ($anterior?->liquidacion_id && $anterior->chofer_id !== $chofer?->id) {

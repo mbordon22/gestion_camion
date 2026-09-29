@@ -9,6 +9,7 @@ use App\Http\Controllers\CamionController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\Admin\CuentaController;
 use App\Http\Controllers\ChoferController;
+use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DestinoController;
 use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\LiquidacionController;
@@ -69,6 +70,10 @@ Route::middleware(['auth', 'cuenta.activa'])->group(function () {
     // cuentas y sus usuarios los maneja el administrador.
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Qué usa la cuenta de lo avanzado (Cuenta::FUNCIONES).
+    Route::get('/configuracion', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
+    Route::put('/configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
 
     // Panel del administrador del sistema: las cuentas de los clientes.
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {

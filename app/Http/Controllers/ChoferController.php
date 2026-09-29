@@ -98,6 +98,12 @@ class ChoferController extends Controller
             $validated['valor'] = null;
         }
 
+        // Si la cuenta no usa comisiones, el formulario no las muestra: lo
+        // que el chofer ya tenía queda como estaba.
+        if (! CuentaActual::usa('comisiones')) {
+            unset($validated['modalidad'], $validated['valor']);
+        }
+
         return $validated;
     }
 }

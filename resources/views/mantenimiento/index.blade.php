@@ -69,7 +69,9 @@
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Próximo service</th> --}}
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Detalle</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Medio</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha pago</th>
+                        @usa('tarjetas')
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha pago</th>
+                        @endusa
                         <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
                     </tr>
                 </thead>
@@ -116,10 +118,12 @@
                                 {{ $reg->detalle ?? '—' }}
                             </td>
                             <td class="t-dato {{ $reg->medioPago ? '' : 't-ocultar' }} px-4 py-3 text-gray-600">{{ $reg->medioPago?->nombre ?? '—' }}</td>
-                            <td class="t-dato {{ $pagaOtroDia ? '' : 't-ocultar' }} px-4 py-3 whitespace-nowrap text-gray-600">
-                                <span class="sm:hidden">Se paga el</span>
-                                {{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}
-                            </td>
+                            @usa('tarjetas')
+                                <td class="t-dato {{ $pagaOtroDia ? '' : 't-ocultar' }} px-4 py-3 whitespace-nowrap text-gray-600">
+                                    <span class="sm:hidden">Se paga el</span>
+                                    {{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}
+                                </td>
+                            @endusa
                             <td class="t-acciones px-4 py-3 text-center">
                                 <div class="flex justify-center gap-2">
                                     <a href="{{ route('mantenimiento.edit', $reg) }}"

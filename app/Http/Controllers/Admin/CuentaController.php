@@ -50,13 +50,15 @@ class CuentaController extends Controller
             'usuario'  => 'required|string|max:255',
             'email'    => 'required|string|lowercase|email|max:255|unique:users,email',
             'password' => ['required', 'string', Password::min(8)],
+            'funciones' => 'nullable|array',
         ]);
 
         $cuenta = DB::transaction(function () use ($datos) {
             $cuenta = Cuenta::create([
-                'nombre' => $datos['nombre'],
-                'notas'  => $datos['notas'] ?? null,
-                'activa' => true,
+                'nombre'    => $datos['nombre'],
+                'notas'     => $datos['notas'] ?? null,
+                'activa'    => true,
+                'funciones' => Cuenta::funcionesValidas($datos['funciones'] ?? []),
             ]);
 
             $this->crearUsuario($cuenta, $datos['usuario'], $datos['email'], $datos['password']);
@@ -87,8 +89,10 @@ class CuentaController extends Controller
         $datos = $request->validate([
             'nombre' => 'required|string|max:100',
             'notas'  => 'nullable|string|max:1000',
+            'funciones' => 'nullable|array',
         ]);
         $datos['activa'] = $request->boolean('activa');
+        $datos['funciones'] = Cuenta::funcionesValidas($datos['funciones'] ?? []);
 
         // Suspender la propia cuenta dejaría al administrador afuera.
         if (! $datos['activa'] && $cuenta->id === $request->user()->cuenta_id) {

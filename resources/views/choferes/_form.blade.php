@@ -46,7 +46,11 @@
         @error('telefono') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
 
-    {{-- A comisión se lleva una parte de cada viaje; si no, sus viajes no descuentan nada. --}}
+    {{--
+        A comisión se lleva una parte de cada viaje; si no, sus viajes no
+        descuentan nada. Sólo si la cuenta usa comisiones (Configuración).
+    --}}
+    @usa('comisiones')
     <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Cómo cobra</label>
@@ -79,6 +83,7 @@
             de acá en adelante: los que ya están cargados conservan lo que se grabó.
         </p>
     </div>
+    @endusa
 
     <div class="sm:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
@@ -92,6 +97,7 @@
 <script>
 (function () {
     const modalidad = document.getElementById('modalidad');
+    if (! modalidad) return;
     const bloque    = document.getElementById('bloque-valor');
     const etiqueta  = document.getElementById('valor-etiqueta');
     const valor     = document.getElementById('valor');

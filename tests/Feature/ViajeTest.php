@@ -334,21 +334,24 @@ class ViajeTest extends TestCase
 
     public function test_lo_que_no_se_usa_queda_en_mas_datos(): void
     {
-        $camion = $this->camion();
+        $this->camion();
 
-        // Sin choferes ni viajes con orden, los dos van dentro de "Más datos".
+        // Sin choferes, el chofer va dentro de "Más datos"; el N° de orden,
+        // que la cuenta usa, a la vista.
         $this->actingAs($this->usuario())->get(route('viajes.create'))
-            ->assertSeeInOrder(['<summary', 'name="nro_orden"', 'name="chofer_id"'], false);
+            ->assertSeeInOrder(['name="nro_orden"', '<summary', 'name="chofer_id"'], false);
 
+        // Una vez que hay choferes, el chofer también queda a la vista.
         Chofer::create(['nombre' => 'Rivadeneira', 'activo' => true]);
-        Viaje::create([
-            'camion_id' => $camion->id, 'modo_cobro' => 'fijo', 'fecha' => '2026-09-20',
-            'total' => 150000, 'nro_orden' => '10110',
-        ]);
 
-        // Una vez que se usan, quedan a la vista.
         $this->actingAs($this->usuario())->get(route('viajes.create'))
             ->assertSeeInOrder(['name="nro_orden"', 'name="chofer_id"', '<summary'], false);
+
+        // Y si la cuenta no usa N° de orden, no aparece en ningún lado.
+        $this->apagar('orden');
+
+        $this->actingAs($this->usuario())->get(route('viajes.create'))
+            ->assertDontSee('name="nro_orden"', false);
     }
 
     public function test_el_total_por_cantidad_lo_calcula_el_servidor(): void

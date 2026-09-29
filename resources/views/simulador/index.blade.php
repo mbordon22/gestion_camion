@@ -123,7 +123,7 @@
                     <label for="precio_unitario" class="{{ $etiqueta }}">Precio por unidad ($)</label>
                     <input type="text" name="precio_unitario" id="precio_unitario" inputmode="decimal" placeholder="Ej: 9.094,25" autocomplete="off"
                            value="{{ $valores['precio_unitario'] }}" class="{{ $campo }}">
-                    <p id="aviso-tarifa" class="hidden text-xs text-gray-500 mt-1" data-url="{{ route('tarifas.sugerir') }}"></p>
+                    <p id="aviso-tarifa" class="hidden text-xs text-gray-500 mt-1" data-url="{{ \App\Support\CuentaActual::usa('tarifas') ? route('tarifas.sugerir') : '' }}"></p>
                 </div>
             </div>
 
@@ -326,7 +326,8 @@
         const cliente = $('cliente_id').value;
         const km = $('km').value;
 
-        if (! porCantidad || ! cliente || ! km) {
+        // Sin tarifas (data-url vacío) no hay nada que proponer.
+        if (! avisoTarifa.dataset.url || ! porCantidad || ! cliente || ! km) {
             avisoTarifa.classList.add('hidden');
             return;
         }

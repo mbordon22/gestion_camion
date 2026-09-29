@@ -6,6 +6,7 @@ use App\Models\Combustible;
 use App\Models\Mantenimiento;
 use App\Models\Equipo;
 use App\Models\Chofer;
+use App\Support\CuentaActual;
 use Carbon\Carbon;
 
 class PagoController extends Controller
@@ -94,6 +95,15 @@ class PagoController extends Controller
             ->filter(fn ($chofer) => $chofer->comisiones > 0 || $chofer->adelantos > 0 || $chofer->gastos > 0)
             ->values();
 
-        return view('pagos.index', compact('meses', 'totalProximoMes', 'mesProximoKey', 'alquileres', 'choferes'));
+        // Cada parte, si la cuenta la usa (Configuración).
+        $conTarjetas = CuentaActual::usa('tarjetas');
+        if (! CuentaActual::usa('equipos')) {
+            $alquileres = collect();
+        }
+        if (! CuentaActual::usa('comisiones')) {
+            $choferes = collect();
+        }
+
+        return view('pagos.index', compact('meses', 'totalProximoMes', 'mesProximoKey', 'alquileres', 'choferes', 'conTarjetas'));
     }
 }

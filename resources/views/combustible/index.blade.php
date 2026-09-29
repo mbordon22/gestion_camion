@@ -97,7 +97,9 @@
                     <th class="px-4 py-3 text-right font-semibold text-gray-600">Km odómetro</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Lugar</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Medio</th>
-                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha pago</th>
+                    @usa('tarjetas')
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha pago</th>
+                    @endusa
                     <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
                 </tr>
             </thead>
@@ -130,10 +132,12 @@
                             <span class="sm:hidden">{{ $reg->lugar ?? 'Carga de combustible' }}</span>
                         </td>
                         <td class="t-dato {{ $reg->medioPago ? '' : 't-ocultar' }} px-4 py-3 text-gray-600">{{ $reg->medioPago?->nombre ?? '—' }}</td>
-                        <td class="t-dato {{ $pagaOtroDia ? '' : 't-ocultar' }} px-4 py-3 whitespace-nowrap text-gray-600" data-order="{{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->timestamp : 0 }}">
-                            <span class="sm:hidden">Se paga el</span>
-                            {{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}
-                        </td>
+                        @usa('tarjetas')
+                            <td class="t-dato {{ $pagaOtroDia ? '' : 't-ocultar' }} px-4 py-3 whitespace-nowrap text-gray-600" data-order="{{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->timestamp : 0 }}">
+                                <span class="sm:hidden">Se paga el</span>
+                                {{ $reg->fecha_vencimiento ? $reg->fecha_vencimiento->format('d/m/Y') : '—' }}
+                            </td>
+                        @endusa
                         <td class="t-acciones px-4 py-3 text-center">
                             <div class="flex justify-center gap-2">
                                 <a href="{{ route('combustible.edit', $reg) }}"
@@ -171,8 +175,8 @@ $(function () {
             $(row).removeClass('even:bg-gray-50 dark:even:bg-gray-900/50 odd:bg-white dark:odd:bg-gray-950');
         },
         columnDefs: [
-            { orderable: false, targets: [9] },
-            { searchable: false, targets: [9] },
+            { orderable: false, targets: [-1] },
+            { searchable: false, targets: [-1] },
         ],
         language: {
             decimal:        ',',

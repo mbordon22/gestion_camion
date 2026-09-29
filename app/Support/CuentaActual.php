@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Cuenta;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
@@ -22,6 +23,36 @@ class CuentaActual
     public static function id(): ?int
     {
         return Auth::user()?->cuenta_id ?? self::$porDefecto;
+    }
+
+    public static function cuenta(): ?Cuenta
+    {
+        if ($usuario = Auth::user()) {
+            return $usuario->cuenta;
+        }
+
+        return self::$porDefecto ? Cuenta::find(self::$porDefecto) : null;
+    }
+
+    /**
+     * Si la cuenta usa alguna de esas funciones (Cuenta::FUNCIONES). Sin
+     * cuenta (consola) no se oculta nada.
+     */
+    public static function usa(string ...$funciones): bool
+    {
+        $cuenta = self::cuenta();
+
+        if (! $cuenta) {
+            return true;
+        }
+
+        foreach ($funciones as $funcion) {
+            if ($cuenta->usa($funcion)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** La cuenta a usar cuando no hay nadie logueado (tests y procesos internos). */

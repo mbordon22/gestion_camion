@@ -262,7 +262,9 @@
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Camión / Chofer</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Cliente</th>
-                    <th class="px-4 py-3 text-left font-semibold text-gray-600">N° orden</th>
+                    @usa('orden')
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600">N° orden</th>
+                    @endusa
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Ruta</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600">Carga</th>
                     <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
@@ -283,7 +285,9 @@
                             {{ $viaje->fecha->format($viaje->fecha->format('H:i') === '00:00' ? 'd/m/Y' : 'd/m/Y H:i') }}
                         </td>
                         <td class="px-4 py-3 text-gray-700">{{ $viaje->cliente?->nombre ?? '—' }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $viaje->nro_orden }}">{{ $viaje->nro_orden ?? '—' }}</td>
+                        @usa('orden')
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-700" data-order="{{ $viaje->nro_orden }}">{{ $viaje->nro_orden ?? '—' }}</td>
+                        @endusa
                         <td class="px-4 py-3 text-gray-600">{{ $viaje->ruta() }}</td>
                         <td class="px-4 py-3 text-gray-700">{{ $viaje->resumenCarga() }}</td>
                         <td class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap" data-order="{{ $viaje->total }}">
@@ -355,9 +359,10 @@ $(function () {
         createdRow: function(row) {
             $(row).removeClass('even:bg-gray-50 dark:even:bg-gray-900/50 odd:bg-white dark:odd:bg-gray-950');
         },
+        // Contadas desde el final: la columna del N° de orden puede no estar.
         columnDefs: [
-            { orderable: false, targets: [7, 8] },
-            { searchable: false, targets: [1, 6, 7, 8] },
+            { orderable: false, targets: [-2, -1] },
+            { searchable: false, targets: [1, -3, -2, -1] },
         ],
         language: {
             decimal:        ',',

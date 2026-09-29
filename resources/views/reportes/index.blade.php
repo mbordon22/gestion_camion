@@ -5,7 +5,8 @@
 @section('content')
 <h1 class="text-2xl font-bold text-gray-800 mb-4">Reportes — Rentabilidad del camión</h1>
 
-{{-- Aclaración devengado vs caja --}}
+{{-- Aclaración devengado vs caja: sólo pesa con gastos que se pagan después (tarjetas). --}}
+@usa('tarjetas')
 <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 mb-6 text-sm flex items-start gap-3">
     <svg class="w-5 h-5 mt-0.5 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -16,6 +17,7 @@
         mirá <a href="{{ route('pagos.index') }}" class="font-semibold underline hover:text-amber-900">Pagos</a>.
     </div>
 </div>
+@endusa
 
 {{-- Filtros. En el celular, plegados con lo elegido a la vista. --}}
 @php
@@ -265,7 +267,9 @@
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Cliente</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">N° orden</th>
+                        @usa('orden')
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">N° orden</th>
+                        @endusa
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Ruta</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-600">Carga</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
@@ -285,7 +289,9 @@
                                 <span class="sm:hidden">{{ $viaje->fecha->format('d/m') }}</span>
                             </td>
                             <td class="t-titulo px-4 py-3 text-gray-700">{{ $viaje->cliente?->nombre ?? 'Sin cliente' }}</td>
-                            <td class="t-dato {{ $viaje->nro_orden ? '' : 't-ocultar' }} px-4 py-3 text-gray-700"><span class="sm:hidden">Orden</span> {{ $viaje->nro_orden ?? '—' }}</td>
+                            @usa('orden')
+                                <td class="t-dato {{ $viaje->nro_orden ? '' : 't-ocultar' }} px-4 py-3 text-gray-700"><span class="sm:hidden">Orden</span> {{ $viaje->nro_orden ?? '—' }}</td>
+                            @endusa
                             <td class="t-linea {{ $viaje->ruta() === '—' ? 't-ocultar' : '' }} px-4 py-3 text-gray-600">{{ $viaje->ruta() }}</td>
                             <td class="t-linea px-4 py-3 text-gray-700">{{ $viaje->resumenCarga() }}</td>
                             <td class="t-monto px-4 py-3 text-right font-semibold text-gray-900">$ {{ number_format($viaje->total, 2, ',', '.') }}</td>
@@ -304,7 +310,7 @@
                 </tbody>
                 <tfoot class="bg-gray-50 font-semibold">
                     <tr>
-                        <td colspan="5" class="t-titulo px-4 py-3 text-right text-gray-700">Total ingresos:</td>
+                        <td colspan="{{ \App\Support\CuentaActual::usa('orden') ? 5 : 4 }}" class="t-titulo px-4 py-3 text-right text-gray-700">Total ingresos:</td>
                         <td class="t-monto px-4 py-3 text-right text-green-700">$ {{ number_format($totalIngresos, 2, ',', '.') }}</td>
                         @if($totalAlquiler > 0)
                             <td class="t-dato px-4 py-3 text-right text-amber-700"><span class="sm:hidden">equipo</span> −$ {{ number_format($totalAlquiler, 2, ',', '.') }}</td>

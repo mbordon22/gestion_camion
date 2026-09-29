@@ -64,6 +64,12 @@
             </div>
         </div>
 
+        <div class="bg-white rounded-lg shadow px-6 pt-5 pb-2">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Qué usa</h2>
+            <p class="text-xs text-gray-400 mt-1">Todo apagado, ve el sistema simple. Después lo puede cambiar él mismo desde Configuración.</p>
+            @include('partials._funciones', ['elegidas' => []])
+        </div>
+
         <div class="flex gap-3">
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded shadow transition">
                 Crear cuenta

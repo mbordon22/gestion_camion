@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MedioPago;
 use App\Models\Combustible;
 use App\Models\Mantenimiento;
+use App\Support\CuentaActual;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +19,7 @@ class MedioPagoController extends Controller
 
     public function create()
     {
-        $tipos = MedioPago::$tipos;
+        $tipos = $this->tipos();
         return view('medios_pago.create', compact('tipos'));
     }
 
@@ -32,7 +33,7 @@ class MedioPagoController extends Controller
 
     public function edit(MedioPago $medioPago)
     {
-        $tipos = MedioPago::$tipos;
+        $tipos = $this->tipos($medioPago);
         return view('medios_pago.edit', compact('medioPago', 'tipos'));
     }
 
@@ -57,6 +58,19 @@ class MedioPagoController extends Controller
 
         $medioPago->delete();
         return redirect()->route('medios-pago.index')->with('success', 'Medio de pago eliminado.');
+    }
+
+    /**
+     * Crédito, sólo para quien usa tarjetas (Configuración), o si el medio
+     * que se edita ya lo es.
+     */
+    private function tipos(?MedioPago $medioPago = null): array
+    {
+        if (CuentaActual::usa('tarjetas') || $medioPago?->esCredito()) {
+            return MedioPago::$tipos;
+        }
+
+        return array_diff_key(MedioPago::$tipos, ['credito' => true]);
     }
 
     private function validar(Request $request): array

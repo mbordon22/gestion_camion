@@ -25,8 +25,15 @@
     @error('medio_pago_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
 </div>
 
+@php
+    // Sin tarjetas (Configuración), todo se paga en el día: la fecha de pago
+    // aparece sólo si se elige un medio de crédito que ya estaba cargado.
+    $soloCredito = ! \App\Support\CuentaActual::usa('tarjetas');
+    $medioElegido = $mediosPago->firstWhere('id', (int) old('medio_pago_id', $medioActual));
+    $ocultarFecha = $soloCredito && ! $medioElegido?->esCredito() && ! $errors->has('fecha_vencimiento');
+@endphp
 <div>
-    <div id="bloque-fecha-pago">
+    <div id="bloque-fecha-pago" data-solo-credito="{{ $soloCredito ? 1 : 0 }}" class="{{ $ocultarFecha ? 'hidden' : '' }}">
         <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de pago</label>
         <input type="date" name="fecha_vencimiento" id="fecha_vencimiento"
                value="{{ old('fecha_vencimiento', $vencActual) }}"
@@ -77,9 +84,11 @@
     const bloqueFecha   = document.getElementById('bloque-fecha-pago');
     const avisoDescuento = document.getElementById('aviso-descuento');
 
+    const soloCredito    = bloqueFecha.dataset.soloCredito === '1';
+
     function aplicarDescuento(tipo) {
         const esDescuento = tipo === 'descuento';
-        bloqueFecha.classList.toggle('hidden', esDescuento);
+        bloqueFecha.classList.toggle('hidden', esDescuento || (soloCredito && tipo !== 'credito'));
         avisoDescuento.classList.toggle('hidden', ! esDescuento);
     }
 
@@ -87,6 +96,13 @@
         const opt = selMedio.options[selMedio.selectedIndex];
         const tipoActual = opt ? opt.getAttribute('data-tipo') : null;
         aplicarDescuento(tipoActual);
+
+        // Sin tarjetas y con un medio de contado, el campo no se ve: se paga
+        // el mismo día del gasto.
+        if (soloCredito && tipoActual !== 'credito') {
+            inpVenc.value = inpFecha.value;
+            return;
+        }
 
         if (editadoManual) return;
         const tipo   = tipoActual;
