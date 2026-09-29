@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use App\Models\Concerns\DeLaCuenta;
 use Illuminate\Database\Eloquent\Model;
 
 class Tarifa extends Model
 {
+    use DeLaCuenta;
+
     public $timestamps = false;
 
     protected $fillable = [

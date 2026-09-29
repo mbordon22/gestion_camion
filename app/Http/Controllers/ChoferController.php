@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Chofer;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Support\CuentaActual;
 
 class ChoferController extends Controller
 {
@@ -73,7 +74,7 @@ class ChoferController extends Controller
         $porcentaje = $modalidad === 'porcentaje';
 
         $validated = $request->validate([
-            'nombre'    => ['required', 'string', 'max:100', Rule::unique('choferes', 'nombre')->ignore($chofer)],
+            'nombre'    => ['required', 'string', 'max:100', CuentaActual::unica('choferes', 'nombre')->ignore($chofer)],
             'dni'       => ['nullable', 'string', 'regex:/^\d{1,2}\.?\d{3}\.?\d{3}$/'],
             'telefono'  => 'nullable|string|max:30',
             'modalidad' => ['nullable', Rule::in(array_keys(Chofer::$modalidades))],

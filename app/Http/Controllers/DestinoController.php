@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Destino;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Support\CuentaActual;
 
 class DestinoController extends Controller
 {
@@ -63,11 +64,11 @@ class DestinoController extends Controller
         $clienteId = $request->input('cliente_id') ?: null;
 
         $validated = $request->validate([
-            'cliente_id' => 'nullable|exists:clientes,id',
+            'cliente_id' => ['nullable', CuentaActual::existe('clientes')],
             'nombre'     => [
                 'required', 'string', 'max:100',
                 // El mismo nombre puede repetirse entre clientes distintos.
-                Rule::unique('destinos', 'nombre')
+                CuentaActual::unica('destinos', 'nombre')
                     ->where(fn ($q) => $q->where('cliente_id', $clienteId))
                     ->ignore($destino),
             ],

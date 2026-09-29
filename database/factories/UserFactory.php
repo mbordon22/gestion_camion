@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Cuenta;
+use App\Support\CuentaActual;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,6 +26,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            // La cuenta en uso (la de prueba, en los tests), o una nueva.
+            'cuenta_id' => fn () => CuentaActual::id() ?? Cuenta::create(['nombre' => fake()->company(), 'activa' => true])->id,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

@@ -8,6 +8,7 @@ use App\Models\Viaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Support\CuentaActual;
 
 class ProductoController extends Controller
 {
@@ -92,7 +93,7 @@ class ProductoController extends Controller
         ]);
 
         $validated = $request->validate([
-            'nombre' => ['required', 'string', 'max:60', Rule::unique('productos', 'nombre')->ignore($producto)],
+            'nombre' => ['required', 'string', 'max:60', CuentaActual::unica('productos', 'nombre')->ignore($producto)],
             'unidad' => 'nullable|string|max:20',
             'activo' => 'nullable|boolean',
         ], [

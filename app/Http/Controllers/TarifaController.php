@@ -7,6 +7,7 @@ use App\Models\Producto;
 use App\Models\Tarifa;
 use App\Models\Viaje;
 use Illuminate\Http\Request;
+use App\Support\CuentaActual;
 
 class TarifaController extends Controller
 {
@@ -90,7 +91,7 @@ class TarifaController extends Controller
     private function validar(Request $request, ?Tarifa $tarifa = null): array
     {
         $validated = $request->validate([
-            'cliente_id'    => 'required|exists:clientes,id',
+            'cliente_id'    => ['required', CuentaActual::existe('clientes')],
             'producto'      => 'nullable|string|max:60',
             'km_desde'      => 'required|integer|min:0|max:5000',
             'km_hasta'      => 'required|integer|min:0|max:5000|gte:km_desde',

@@ -7,6 +7,7 @@ use App\Http\Controllers\CombustibleController;
 use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\CamionController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\Admin\CuentaController;
 use App\Http\Controllers\ChoferController;
 use App\Http\Controllers\DestinoController;
 use App\Http\Controllers\EquipoController;
@@ -21,7 +22,7 @@ use App\Http\Controllers\ProfileController;
 
 Route::get('/', fn() => redirect()->route('inicio'));
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'cuenta.activa'])->group(function () {
 
     Route::get('/inicio', [InicioController::class, 'index'])->name('inicio');
 
@@ -64,10 +65,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/pagos', [PagoController::class, 'index'])->name('pagos.index');
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
 
-    // Perfil (Breeze): editar datos, cambiar contraseña, eliminar cuenta.
+    // Perfil (Breeze): editar datos y cambiar contraseña. Borrarse no: las
+    // cuentas y sus usuarios los maneja el administrador.
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Panel del administrador del sistema: las cuentas de los clientes.
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('cuentas', [CuentaController::class, 'index'])->name('cuentas.index');
+        Route::get('cuentas/nueva', [CuentaController::class, 'create'])->name('cuentas.create');
+        Route::post('cuentas', [CuentaController::class, 'store'])->name('cuentas.store');
+        Route::get('cuentas/{cuenta}', [CuentaController::class, 'edit'])->name('cuentas.edit');
+        Route::put('cuentas/{cuenta}', [CuentaController::class, 'update'])->name('cuentas.update');
+        Route::post('cuentas/{cuenta}/usuarios', [CuentaController::class, 'agregarUsuario'])->name('cuentas.usuarios.store');
+        Route::put('usuarios/{usuario}/contrasena', [CuentaController::class, 'cambiarContrasena'])->name('usuarios.contrasena');
+    });
 });
 
 require __DIR__.'/auth.php';

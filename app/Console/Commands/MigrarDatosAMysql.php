@@ -11,11 +11,9 @@ class MigrarDatosAMysql extends Command
 
     protected $description = 'Copia los datos del SQLite original a MySQL, tabla por tabla.';
 
-    // Orden importa por las claves foráneas (cuotas depende de prestamos).
+    // Orden importa por las claves foráneas. Préstamos y cuotas ya no existen.
     private array $tablas = [
         'medios_pago',
-        'prestamos',
-        'cuotas',
         'viajes',
         'combustible',
         'mantenimiento',

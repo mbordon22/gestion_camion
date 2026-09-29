@@ -12,6 +12,7 @@ use App\Models\Producto;
 use App\Support\Numero;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Support\CuentaActual;
 
 class ViajeController extends Controller
 {
@@ -311,12 +312,12 @@ class ViajeController extends Controller
         }
 
         $validated = $request->validate([
-            'camion_id'       => 'required|exists:camiones,id',
-            'cliente_id'      => $clienteNuevo ? 'nullable' : 'nullable|exists:clientes,id',
+            'camion_id'       => ['required', CuentaActual::existe('camiones')],
+            'cliente_id'      => $clienteNuevo ? 'nullable' : ['nullable', CuentaActual::existe('clientes')],
             'cliente_nuevo'   => $clienteNuevo ? 'required|string|max:100' : 'nullable',
-            'chofer_id'       => $choferNuevo ? 'nullable' : 'nullable|exists:choferes,id',
+            'chofer_id'       => $choferNuevo ? 'nullable' : ['nullable', CuentaActual::existe('choferes')],
             'chofer_nuevo'    => $choferNuevo ? 'required|string|max:100' : 'nullable',
-            'equipo_id'       => 'nullable|exists:equipos,id',
+            'equipo_id'       => ['nullable', CuentaActual::existe('equipos')],
             'modo_cobro'      => 'required|in:fijo,cantidad',
             'fecha'           => 'required|date',
             'hora'            => 'nullable|date_format:H:i',

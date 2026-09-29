@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeLaCuenta;
 use Illuminate\Database\Eloquent\Model;
 
 class Chofer extends Model
 {
+    use DeLaCuenta;
+
     public $timestamps = false;
 
     /** 'chofer' pluraliza como 'chofers' en inglés; la tabla es 'choferes'. */

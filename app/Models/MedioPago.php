@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeLaCuenta;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
 class MedioPago extends Model
 {
+    use DeLaCuenta;
+
     public $timestamps = false;
 
     protected $table = 'medios_pago';

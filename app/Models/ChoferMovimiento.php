@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeLaCuenta;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ChoferMovimiento extends Model
 {
+    use DeLaCuenta;
+
     public $timestamps = false;
 
     protected $table = 'chofer_movimientos';

@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Support\Numero;
+use App\Models\Concerns\DeLaCuenta;
 use Illuminate\Database\Eloquent\Model;
 
 class Viaje extends Model
 {
+    use DeLaCuenta;
+
     public $timestamps = false;
 
     protected $fillable = [

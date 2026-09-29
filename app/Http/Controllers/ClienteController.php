@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Support\CuentaActual;
 
 class ClienteController extends Controller
 {
@@ -59,7 +60,7 @@ class ClienteController extends Controller
     private function validar(Request $request, ?Cliente $cliente = null): array
     {
         $validated = $request->validate([
-            'nombre'   => ['required', 'string', 'max:100', Rule::unique('clientes', 'nombre')->ignore($cliente)],
+            'nombre'   => ['required', 'string', 'max:100', CuentaActual::unica('clientes', 'nombre')->ignore($cliente)],
             'cuit'     => ['nullable', 'string', 'regex:/^\d{2}-?\d{8}-?\d$/'],
             'telefono' => 'nullable|string|max:30',
             'notas'    => 'nullable|string|max:500',

@@ -9,6 +9,7 @@ use App\Models\Liquidacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Support\CuentaActual;
 
 /**
  * Lo que se le paga al chofer a comisión: sus viajes sin liquidar, menos lo
@@ -142,7 +143,7 @@ class LiquidacionController extends Controller
             'fecha'     => 'required|date',
             'monto'     => 'required|numeric|min:0.01|max:9999999999',
             'concepto'  => 'nullable|string|max:150',
-            'camion_id' => 'nullable|exists:camiones,id',
+            'camion_id' => ['nullable', CuentaActual::existe('camiones')],
         ], [
             'monto.required' => 'Poné el monto.',
         ]);

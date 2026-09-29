@@ -6,6 +6,7 @@ use App\Models\Camion;
 use App\Models\Equipo;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Support\CuentaActual;
 
 class EquipoController extends Controller
 {
@@ -132,10 +133,10 @@ class EquipoController extends Controller
         $porcentaje = $request->input('modalidad') === 'porcentaje';
 
         $validated = $request->validate([
-            'nombre'      => ['required', 'string', 'max:100', Rule::unique('equipos', 'nombre')->ignore($equipo)],
+            'nombre'      => ['required', 'string', 'max:100', CuentaActual::unica('equipos', 'nombre')->ignore($equipo)],
             'tipo'        => 'nullable|string|max:40',
             'patente'     => 'nullable|string|max:15',
-            'camion_id'   => 'nullable|exists:camiones,id',
+            'camion_id'   => ['nullable', CuentaActual::existe('camiones')],
             'alquilado'   => 'nullable|boolean',
             'propietario' => 'nullable|string|max:100',
             'modalidad'   => $alquilado ? ['required', Rule::in(array_keys(Equipo::$modalidades))] : 'nullable',

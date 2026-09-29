@@ -269,6 +269,13 @@
 
                 @auth
                     <span class="mx-2 h-6 w-px bg-blue-500"></span>
+                    @if(Auth::user()->esAdmin())
+                        <a href="{{ route('admin.cuentas.index') }}"
+                           class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition
+                                  {{ request()->routeIs('admin.*') ? 'bg-blue-900' : '' }}">
+                            Cuentas
+                        </a>
+                    @endif
                     <a href="{{ route('profile.edit') }}"
                        class="px-3 py-2 rounded text-sm font-medium hover:bg-blue-800 transition flex items-center gap-1.5
                               {{ request()->routeIs('profile.*') ? 'bg-blue-900' : '' }}">
@@ -338,6 +345,13 @@
             @auth
                 <div class="border-t border-blue-600 mt-2 pt-2">
                     <p class="px-3 py-1 text-xs text-blue-200">{{ Auth::user()->name }} · {{ Auth::user()->email }}</p>
+                    @if(Auth::user()->esAdmin())
+                        <a href="{{ route('admin.cuentas.index') }}"
+                           class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
+                                  {{ request()->routeIs('admin.*') ? 'bg-blue-900' : '' }}">
+                            Cuentas de clientes
+                        </a>
+                    @endif
                     <a href="{{ route('profile.edit') }}"
                        class="block px-3 py-2 rounded text-sm font-medium hover:bg-blue-800
                               {{ request()->routeIs('profile.*') ? 'bg-blue-900' : '' }}">

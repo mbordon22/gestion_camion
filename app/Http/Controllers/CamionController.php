@@ -8,6 +8,7 @@ use App\Models\Combustible;
 use App\Models\Mantenimiento;
 use App\Support\Numero;
 use Illuminate\Http\Request;
+use App\Support\CuentaActual;
 
 class CamionController extends Controller
 {
@@ -65,7 +66,7 @@ class CamionController extends Controller
         $request->merge(['consumo_cada_100km' => Numero::leer($request->input('consumo_cada_100km'))]);
 
         $validated = $request->validate([
-            'patente'       => 'required|string|max:20|unique:camiones,patente,' . ($camion->id ?? 'NULL'),
+            'patente'       => ['required', 'string', 'max:20', CuentaActual::unica('camiones', 'patente')->ignore($camion)],
             'marca'         => 'nullable|string|max:100',
             'modelo'        => 'nullable|string|max:100',
             'anio'          => 'nullable|integer|min:1950|max:' . (date('Y') + 1),

@@ -43,6 +43,23 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'es_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * La cuenta de la que es: sólo ve sus datos. cuenta_id y es_admin no se
+     * asignan en masa, así nadie se cambia de cuenta ni se hace admin desde
+     * un formulario.
+     */
+    public function cuenta()
+    {
+        return $this->belongsTo(Cuenta::class);
+    }
+
+    /** El administrador del sistema: crea las cuentas de los clientes. */
+    public function esAdmin(): bool
+    {
+        return (bool) $this->es_admin;
     }
 }

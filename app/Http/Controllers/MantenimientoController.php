@@ -7,6 +7,7 @@ use App\Models\MedioPago;
 use App\Models\Camion;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Support\CuentaActual;
 
 class MantenimientoController extends Controller
 {
@@ -87,14 +88,14 @@ class MantenimientoController extends Controller
     private function validar(Request $request): array
     {
         return $request->validate([
-            'camion_id'         => 'required|exists:camiones,id',
+            'camion_id'         => ['required', CuentaActual::existe('camiones')],
             'fecha'             => 'required|date',
             'tipo'              => 'required|in:aceite,filtros,neumaticos,frenos,repuesto,service,otro',
             'monto'             => 'required|numeric|min:0',
             'km_actuales'       => 'nullable|integer|min:0',
             'proximo_service'   => 'nullable|integer|min:0',
             'detalle'           => 'nullable|string|max:500',
-            'medio_pago_id'     => 'nullable|exists:medios_pago,id',
+            'medio_pago_id'     => ['nullable', CuentaActual::existe('medios_pago')],
             'fecha_vencimiento' => 'nullable|date',
         ]);
     }

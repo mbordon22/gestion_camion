@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeLaCuenta;
 use Illuminate\Database\Eloquent\Model;
 
 class Mantenimiento extends Model
 {
+    use DeLaCuenta;
+
     public $timestamps = false;
 
     protected $table = 'mantenimiento';

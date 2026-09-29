@@ -50,6 +50,16 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // La contraseña es correcta, pero la cuenta está suspendida (o el
+        // usuario quedó sin cuenta): no entra.
+        if (! Auth::user()->cuenta?->activa) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu cuenta está suspendida. Comunicate con el administrador.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
